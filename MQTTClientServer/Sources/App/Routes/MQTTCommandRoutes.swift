@@ -37,25 +37,22 @@ struct MQTTCommandRoutes {
             // Hummingbird 会自动将 MQTTCommandResponse <ResponseEncodable> 编码为 JSON 并设置 Content-Type
             return resp
         }
-        
-        // 自定义响应，手动编码为 JSON
-        // import HTTPTypes
-//        router.post("commands") { request, context -> MQTTCommandResponse in
-//            let cmd = try await request.decode(as: MQTTRequest.self, context: context)
-//            try await mqttService.publish(topic: cmd.topic, payload: cmd.payload)
-//            let resp = MQTTCommandResponse(status: "published", topic: cmd.topic)
-//
-//            let data = try JSONEncoder().encode(resp)
-//            let jsonString = String(data: data, encoding: .utf8) ?? "{}"
-//            var response = Response(status: .ok, body: .init(byteBuffer: .init(string: jsonString)))
-//            let jsonContentType = HTTPField(name: HTTPField.Name.contentType, value: "application/json; charset=utf-8")
-//            response.headers.append(jsonContentType)
-//            return response
-//        }
 
         // 健康检查
         router.get("mqtt_health") { _, _ in
             return Response(status: .ok, body: .init(byteBuffer: .init(string: "OK")))
+        }
+
+        // 运行时诊断：返回 listener 状态和最近一次 subscribe ack
+        router.get("mqtt_status") { _, _ in
+            let status = await mqttService.listenerStatus()
+            return Response(status: .ok, body: .init(byteBuffer: .init(string: status)))
+        }
+
+        // 允许远程重启 listener（运维用）
+        router.post("mqtt_restart") { _, _ in
+            await mqttService.restartListener()
+            return Response(status: .ok, body: .init(byteBuffer: .init(string: "restarted")))
         }
     }
 }

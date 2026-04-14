@@ -15,6 +15,7 @@ import FluentMySQLDriver
 // Keep a strong reference to DatabaseManager for the lifetime of the application
 // so that its `Databases`/connection pool isn't deinitialized before shutdown.
 fileprivate var sharedDatabaseManager: DatabaseManager?
+fileprivate var sharedMqttService: MQTTService?
 
 func buildApplication() async throws -> some ApplicationProtocol {
     let logger = Logger(label: "App")
@@ -34,12 +35,13 @@ func buildApplication() async throws -> some ApplicationProtocol {
     ])
 
     // 4. 启动 MQTT 服务
-//    let mqttService = try MQTTService(db: dbManager.db())
-//    try await mqttService.start()
+    let mqttService = try MQTTService(dbManager: dbManager)
+    sharedMqttService = mqttService
+    try await mqttService.start()
 
     // 5. 配置 Hummingbird 路由
     let router = Router()
-    // MQTTCommandRoutes(mqttService: mqttService).addRoutes(to: router)
+     MQTTCommandRoutes(mqttService: mqttService).addRoutes(to: router)
 
     StatusRoutes().addRoutes(to: router)
     

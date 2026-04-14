@@ -40,8 +40,8 @@ class MySqlDatabaseService {
         let address: SocketAddress
         do {
             address = try SocketAddress.makeAddressResolvingHost(
-                Configuration.dbHost,
-                port: Configuration.dbPort
+                config.DB_HOST,
+                port: config.DB_PORT
             )
         } catch {
             return eventLoop.makeFailedFuture(error)
@@ -49,9 +49,9 @@ class MySqlDatabaseService {
         
         return MySQLConnection.connect(
             to: address,
-            username: Configuration.dbUsername,
-            database: Configuration.dbDatabase,
-            password: Configuration.dbPassword,
+            username: config.DB_USERNAME,
+            database: config.DB_DATABASE,
+            password: config.DB_PASSWORD,
             tlsConfiguration: nil,
             on: eventLoop
         ).map { connection in
@@ -599,6 +599,6 @@ class MySqlDatabaseService {
 
 enum DatabaseError: Error {
     case notConnected
-    case configurationError(String)
+    case configError(String)
 }
 
