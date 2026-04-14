@@ -26,6 +26,7 @@ actor MQTTClientService {
 
         let clientConfiguration = MQTTClient.Configuration(
             keepAliveInterval: .seconds(config.mqttKeepAliveInterval),
+            connectTimeout: .seconds(30),
             userName: config.MQTT_USERNAME,
             password: config.MQTT_PASSWORD,
             tlsConfiguration: tlsConfiguration.map { .niossl($0) }

@@ -28,6 +28,9 @@ func buildApplication() async throws -> some ApplicationProtocol {
     // 2. 等待 MariaDB 就绪（解决 Docker 启动时序问题）
     try await dbManager.waitUntilReady(maxAttempts: 5, delay: .seconds(3))
 
+    // 2b. DB 可连后再开 keep-alive，避免与 waitUntilReady 并发握手失败导致 MariaDB 告警
+    dbManager.startKeepAlive()
+
     // 3. 运行迁移（自动建表，已存在则跳过）
     try await dbManager.runMigrations([
         CreateSensorDHT22(),

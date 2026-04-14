@@ -35,8 +35,6 @@ actor MQTTMessageProcessor {
                 try await dbManager.withRetry(maxAttempts: 3, delay: .seconds(2)) {
                     try await record.save(on: dbManager.db())
                 }
-                let idString = record.id?.uuidString ?? "<no-id>"
-                logger.info("Saved [\(idString)] temp=\(String(describing: record.temperature))")
             } else {
                 logger.warning("No DatabaseManager available: skipping save for topic=\(topic)")
             }

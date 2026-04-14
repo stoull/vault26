@@ -49,6 +49,11 @@ final class DatabaseManager: Sendable {
     private let logger: Logger
     private let config: DatabaseConfig
 
+    // Keep-alive task to retain a lightweight periodic ping so the connection pool
+    // doesn't open and immediately close sockets. This helps avoid "Aborted connection"
+    // caused by very short-lived client sockets.
+    private var keepAliveTask: Task<Void, Never>?
+
     init(config: DatabaseConfig) {
         self.config  = config
         self.logger  = Logger(label: "DatabaseManager")
@@ -57,6 +62,10 @@ final class DatabaseManager: Sendable {
             on: .singletonMultiThreadedEventLoopGroup
         )
         setupPool()
+        // Keep-alive is started explicitly after `waitUntilReady()` so we do not
+        // race with startup polling; concurrent failed handshakes while MariaDB
+        // is still booting otherwise trigger server-side "Aborted connection"
+        // warnings (Got an error reading communication packets).
     }
 
     /// 取得默认 MySQL 数据库实例
@@ -70,6 +79,13 @@ final class DatabaseManager: Sendable {
 
     /// 关闭所有连接（graceful shutdown 时调用）
     func shutdown() async {
+        // Cancel keep-alive task first so it won't attempt further queries
+        if let t = keepAliveTask {
+            logger.info("Cancelling DB keep-alive task")
+            t.cancel()
+            // do not forcibly await value; just nil it out to break strong refs
+            keepAliveTask = nil
+        }
         await databases.shutdownAsync()
         logger.info("DatabaseManager: all connections closed")
     }
@@ -95,6 +111,39 @@ final class DatabaseManager: Sendable {
             maxConn=\(config.maxConnectionsPerEventLoop) \
             idleTimeout=\(config.maxIdleTimeBeforePruning.nanoseconds / 1_000_000_000)s
             """)
+    }
+
+    /// Start a background task that periodically runs a cheap `SELECT 1` to keep at least
+    /// one connection active and ensure the pool doesn't open then immediately close sockets.
+    /// Call once the database accepts connections (e.g. after `waitUntilReady()`).
+    func startKeepAlive(interval: Duration = .seconds(30)) {
+        // Cancel any existing task
+        keepAliveTask?.cancel()
+
+        keepAliveTask = Task { [weak self] in
+            guard let self = self else { return }
+            self.logger.info("DB keep-alive started (interval: \(interval))")
+            while !Task.isCancelled {
+                do {
+                    if let sqlDB = self.db() as? any SQLDatabase {
+                        try await sqlDB.raw("SELECT 1").run()
+                        self.logger.debug("DB keep-alive ping succeeded")
+                    } else {
+                        self.logger.debug("DB not SQL-capable; skipping keep-alive ping")
+                    }
+                } catch {
+                    self.logger.warning("DB keep-alive ping failed: \(error)")
+                }
+                // Sleep until next ping or cancellation
+                do {
+                    try await Task.sleep(for: interval)
+                } catch {
+                    // Task.sleep throws on cancellation - break out cleanly
+                    break
+                }
+            }
+            self.logger.info("DB keep-alive stopped")
+        }
     }
 }
 
@@ -140,10 +189,65 @@ extension DatabaseManager {
             logger:     logger,
             on:         .singletonMultiThreadedEventLoopGroup.any()
         )
-        // Convert EventLoopFuture<Void> to async/await using the helper below
-        try await migrator.setupIfNeeded().asAsync()
-        try await migrator.prepareBatch().asAsync()
-        logger.info("Migrations completed")
+
+        // Diagnostic: preview which migrations would be prepared so we can see if our migrations
+        // are being discovered/registered by the Migrator.
+        do {
+            let preview = try await migrator.previewPrepareBatch().asAsync()
+            let names = preview.map { pair -> String in
+                let mig = pair.0
+                let dbid = pair.1
+                return "\(mig.name)@\(dbid?.string ?? "default")"
+            }
+            logger.info("Migrations preview (to be applied): \(names.joined(separator: ", "))")
+        } catch {
+            logger.warning("Failed to preview migrations: \(error)")
+        }
+
+        // Run setup and prepare, with explicit error logging
+        do {
+            try await migrator.setupIfNeeded().asAsync()
+            try await migrator.prepareBatch().asAsync()
+            logger.info("Migrations completed")
+        } catch {
+            logger.error("Migrations failed: \(String(reflecting: error))")
+            throw error
+        }
+
+        // Diagnostic: list existing tables to confirm migrations created expected tables
+//        do {
+//            if let sqlDB = db() as? any SQLDatabase {
+//                // SHOW TABLES returns rows with a single column whose name depends on the DB
+//                let rows = try await sqlDB.raw("SHOW TABLES").all()
+//                let tableList = rows.map { row in
+//                    // Convert each row to a dictionary of columnName -> stringValue for logging
+//                    row.columnNames.map { col in
+//                        if let val = row.column(col)?.string {
+//                            return "\(col)=\(val)"
+//                        } else {
+//                            return "\(col)=<non-string>"
+//                        }
+//                    }.joined(separator: ",")
+//                }
+//                logger.info("Existing tables after migration: \(tableList.joined(separator: "; "))")
+//            } else {
+//                logger.info("Database is not SQL-capable; skipping SHOW TABLES preview")
+//            }
+//        } catch {
+//            logger.warning("Failed to list tables after migration: \(error)")
+//        }
+
+        // Diagnostic: list migration_log entries
+        do {
+            // MigrationLog is part of FluentKit
+            if let database = db() as? any FluentKit.Database {
+                let logs = try await FluentKit.MigrationLog.query(on: database).all()
+                let entries = logs.map { "name=\($0.name) batch=\($0.batch)" }
+                logger.info("MigrationLog entries: \(entries.joined(separator: ", "))")
+            }
+        } catch {
+            logger.warning("Failed to query MigrationLog: \(error)")
+        }
     }
 }
 

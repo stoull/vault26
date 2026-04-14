@@ -12,8 +12,8 @@ import Fluent
 final class SensorData: Model, @unchecked Sendable {
     static let schema = "sensor_data"
 
-    @ID(key: .id)
-    var id: UUID?
+    @ID(custom: "id", generatedBy: .database)
+    var id: Int?
 
     @Field(key: "topic")
     var topic: String
@@ -32,9 +32,8 @@ final class SensorData: Model, @unchecked Sendable {
 
     init() {}
 
-    init(id: UUID? = nil, topic: String, payload: String,
+    init(topic: String, payload: String,
          temperature: Double? = nil, humidity: Double? = nil) {
-        self.id = id
         self.topic = topic
         self.payload = payload
         self.temperature = temperature

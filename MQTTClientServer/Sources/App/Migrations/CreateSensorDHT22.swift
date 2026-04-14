@@ -9,6 +9,8 @@ import Foundation
 import Fluent
 
 struct CreateSensorDHT22: AsyncMigration {
+    var name: String { "CreateSensorDHT22" }
+
     func prepare(on database: Database) async throws {
         try await database.schema(SensorDHT22.schema)
             .field("id",             .int,    .identifier(auto: true))
