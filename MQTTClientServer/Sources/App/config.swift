@@ -12,17 +12,18 @@ enum config {
     // MariaDB 配置
     // static let DB_HOST = ProcessInfo.processInfo.environment["DB_HOST"] ?? "macmini.local"
     
-    static let DB_HOST =        env("DB_HOST",      "macmini.local")
-    static let DB_PORT =        envInt("DB_PORT",   3306)
-    static let DB_USERNAME =    env("DB_USERNAME",  "username")
-    static let DB_PASSWORD =    env("DB_PASSWORD",  "user_password")
-    static let DB_DATABASE =    env("DB_DATABASE",  "home_db")
+    // 优先使用EnvLoader中的变量值
+    static let DB_HOST =        EnvLoader.shared.DB_HOST ?? env("DB_HOST",      "macmini.local")
+    static let DB_PORT =        EnvLoader.shared.DB_PORT ?? envInt("DB_PORT",   3306)
+    static let DB_USERNAME =    EnvLoader.shared.DB_USERNAME ?? env("DB_USERNAME",  "username")
+    static let DB_PASSWORD =    EnvLoader.shared.DB_PASSWORD ?? env("DB_PASSWORD",  "user_password")
+    static let DB_DATABASE =    EnvLoader.shared.DB_DATABASE ?? env("DB_DATABASE",  "home_db")
     
     // MQTT 配置
-    static let MQTT_HOST =      env("MQTT_HOST",    "macmini.local")
-    static let MQTT_PORT =      envInt("MQTT_PORT", 1883)
-    static let MQTT_USERNAME =  env("MQTT_USERNAME", "username")
-    static let MQTT_PASSWORD =  env("MQTT_PASSWORD", "user_password")
+    static let MQTT_HOST =      EnvLoader.shared.MQTT_HOST ?? env("MQTT_HOST",    "macmini.local")
+    static let MQTT_PORT =      EnvLoader.shared.MQTT_PORT ?? envInt("MQTT_PORT", 1883)
+    static let MQTT_USERNAME =  EnvLoader.shared.MQTT_USERNAME ?? env("MQTT_USERNAME", "username")
+    static let MQTT_PASSWORD =  EnvLoader.shared.MQTT_PASSWORD ?? env("MQTT_PASSWORD", "user_password")
     
     // 其它配置
     static let mqttClientId = "swift-mqtt-client-\(UUID().uuidString)"

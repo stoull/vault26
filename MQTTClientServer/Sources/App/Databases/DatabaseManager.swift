@@ -52,7 +52,9 @@ final class DatabaseManager: Sendable {
     // Keep-alive task to retain a lightweight periodic ping so the connection pool
     // doesn't open and immediately close sockets. This helps avoid "Aborted connection"
     // caused by very short-lived client sockets.
-    private var keepAliveTask: Task<Void, Never>?
+    // Swift 6: `Sendable` class cannot have mutable stored properties; this handle is only
+    // set from `startKeepAlive` and cleared in `shutdown`, which the app runs sequentially.
+    nonisolated(unsafe) private var keepAliveTask: Task<Void, Never>?
 
     init(config: DatabaseConfig) {
         self.config  = config
@@ -113,6 +115,11 @@ final class DatabaseManager: Sendable {
             """)
     }
 
+    /**
+     默认每 30 秒执行一次 SELECT 1
+     若你没有遇到 MariaDB 大量 Aborted connection、或空闲期连接被中间设备掐掉等问题，可以删，减少一个长期后台任务和日志。
+     若你确实遇到过启动阶段告警或长时间几乎无 DB 访问时的连接问题，保留更合理。
+     */
     /// Start a background task that periodically runs a cheap `SELECT 1` to keep at least
     /// one connection active and ensure the pool doesn't open then immediately close sockets.
     /// Call once the database accepts connections (e.g. after `waitUntilReady()`).
@@ -192,19 +199,18 @@ extension DatabaseManager {
 
         // Diagnostic: preview which migrations would be prepared so we can see if our migrations
         // are being discovered/registered by the Migrator.
-        do {
-            let preview = try await migrator.previewPrepareBatch().asAsync()
-            let names = preview.map { pair -> String in
-                let mig = pair.0
-                let dbid = pair.1
-                return "\(mig.name)@\(dbid?.string ?? "default")"
-            }
-            logger.info("Migrations preview (to be applied): \(names.joined(separator: ", "))")
-        } catch {
-            logger.warning("Failed to preview migrations: \(error)")
-        }
+//        do {
+//            let preview = try await migrator.previewPrepareBatch().asAsync()
+//            let names = preview.map { pair -> String in
+//                let mig = pair.0
+//                let dbid = pair.1
+//                return "\(mig.name)@\(dbid?.string ?? "default")"
+//            }
+//            logger.info("Migrations preview (to be applied): \(names.joined(separator: ", "))")
+//        } catch {
+//            logger.warning("Failed to preview migrations: \(error)")
+//        }
 
-        // Run setup and prepare, with explicit error logging
         do {
             try await migrator.setupIfNeeded().asAsync()
             try await migrator.prepareBatch().asAsync()
@@ -212,41 +218,6 @@ extension DatabaseManager {
         } catch {
             logger.error("Migrations failed: \(String(reflecting: error))")
             throw error
-        }
-
-        // Diagnostic: list existing tables to confirm migrations created expected tables
-//        do {
-//            if let sqlDB = db() as? any SQLDatabase {
-//                // SHOW TABLES returns rows with a single column whose name depends on the DB
-//                let rows = try await sqlDB.raw("SHOW TABLES").all()
-//                let tableList = rows.map { row in
-//                    // Convert each row to a dictionary of columnName -> stringValue for logging
-//                    row.columnNames.map { col in
-//                        if let val = row.column(col)?.string {
-//                            return "\(col)=\(val)"
-//                        } else {
-//                            return "\(col)=<non-string>"
-//                        }
-//                    }.joined(separator: ",")
-//                }
-//                logger.info("Existing tables after migration: \(tableList.joined(separator: "; "))")
-//            } else {
-//                logger.info("Database is not SQL-capable; skipping SHOW TABLES preview")
-//            }
-//        } catch {
-//            logger.warning("Failed to list tables after migration: \(error)")
-//        }
-
-        // Diagnostic: list migration_log entries
-        do {
-            // MigrationLog is part of FluentKit
-            if let database = db() as? any FluentKit.Database {
-                let logs = try await FluentKit.MigrationLog.query(on: database).all()
-                let entries = logs.map { "name=\($0.name) batch=\($0.batch)" }
-                logger.info("MigrationLog entries: \(entries.joined(separator: ", "))")
-            }
-        } catch {
-            logger.warning("Failed to query MigrationLog: \(error)")
         }
     }
 }

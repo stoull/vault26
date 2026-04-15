@@ -5,6 +5,7 @@ let package = Package(
     name: "MQTTClientServer",
     platforms: [.macOS(.v14)],
     dependencies: [
+        // 声明要哪些外部包，拉哪个仓库、什么版本,下载源码包到本地，并构建
         // Hummingbird 2 web framework
         .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "2.0.0"),
         // MQTT NIO client
@@ -21,8 +22,9 @@ let package = Package(
     ],
     targets: [
         .executableTarget(
-            name: "App",
+            name: "App", // 所有属于这个可执行程序的 Swift 文件应在 Sources/App/ 下，因为SwiftPM 的默认规则是：target 名决定默认的 Sources/<name>/ 根 Sources/<TargetName>/ → Sources/App/
             dependencies: [
+                // 声明这个 target 要链接其中哪个 Package 构建好的 product
                 .product(name: "Hummingbird", package: "hummingbird"),
                 .product(name: "MQTTNIO", package: "mqtt-nio"),
                 .product(name: "Fluent", package: "fluent"),
@@ -32,7 +34,7 @@ let package = Package(
                 .product(name: "SwiftyJSON", package: "SwiftyJSON"),
             ],
             resources: [
-                .process("config.json")
+                .process("config.json"),    // 走“资源处理”管线：SPM 会按文件类型决定要不要加工, xcassets、需编译/优化的资源 一般在 bundle 的 Contents/Resources/ 里
             ]
         ),
     ]
