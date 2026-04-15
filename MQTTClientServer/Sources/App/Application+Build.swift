@@ -41,7 +41,7 @@ func buildApplication() async throws -> some ApplicationProtocol {
     // 3. 运行迁移（自动建表，已存在则跳过）
     try await dbManager.runMigrations([
         CreateSensorDHT22(),
-        CreateSensorData()
+        CreateSensorDataTempHumi()
     ])
 
     // 4. 启动 MQTT 服务

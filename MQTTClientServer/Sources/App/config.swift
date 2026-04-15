@@ -28,6 +28,17 @@ enum config {
     // 其它配置
     static let mqttClientId = "swift-mqtt-client-\(UUID().uuidString)"
     // 支持多个主题，用逗号分隔，例如: "test/data,sensor/temperature,device/status"
+    /**
+     传感器数据主题结构:
+     sensor/env/dht20/+/data
+     sensor/env/dht22/+/data
+     sensor/env/sht30/+/data
+     sensor/env/sht35/+/data
+     
+     sensor/env/dht22/001/temperature
+     sensor/motion/mpu6050/001/acceleration
+     sensor/gas/mq135/001/co2
+     */
     static let mqttTopics: [String] =
     {
         let topicsString = "sensor/env/+/+/data,test/updates,sensor/dht22/+/data,device/system/+/device_info,note/+/home"

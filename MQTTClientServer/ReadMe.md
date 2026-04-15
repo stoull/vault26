@@ -26,6 +26,10 @@ sensor/env/dht22/+/data
 sensor/env/sht30/+/data
 sensor/env/sht35/+/data
 
+sensor/env/dht22/001/temperature
+sensor/motion/mpu6050/001/acceleration
+sensor/gas/mq135/001/co2
+
 sensor/env/+/+/data
 
 
