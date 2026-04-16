@@ -86,16 +86,16 @@ actor MQTTMessageProcessor {
 
         let temperature = jsonDouble(json, key: "temperature")
         let humidity = jsonDouble(json, key: "humidity")
-        let createdAtString =
+        let createdAtISO =
             (json["created_at"] as? String)
             ?? (json["createdAt"] as? String)
-
+        
         let record = SensorDataTempHumi(
             sensorType: deviceTypeInt,
             sensorId: sensorIdInt,
             temperature: temperature,
             humidity: humidity,
-            created_at: createdAtString
+            created_at: createdAtISO
         )
 
         do {

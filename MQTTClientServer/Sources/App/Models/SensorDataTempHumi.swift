@@ -28,7 +28,10 @@ final class SensorDataTempHumi: Model, @unchecked Sendable {
     var humidity: Double?
     
     @Field(key: "created_at")
-    var createdAt: String?
+    var createdAt: Date?
+    
+    @Field(key: "created_at_iso")
+    var createdAtISO: String?
     
     @Timestamp(key: "received_at", on: .create)
     var receivedAt: Date?
@@ -41,6 +44,21 @@ final class SensorDataTempHumi: Model, @unchecked Sendable {
         self.sensorId = sensorId
         self.temperature = temperature
         self.humidity = humidity
-        self.createdAt = created_at
+
+        self.createdAtISO = created_at
+        
+        // 解析 ISO 8601 时间戳
+        let dateFormatter = ISO8601DateFormatter()
+        dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        var cd: Date? = nil
+        if let createdAtISO = created_at,
+           let createdAt = iso8601ToMySQLTimestampNoMillisToDate(createdAtISO) {
+            cd = createdAt
+        } else {
+            logger.warning("Invalid ISO 8601 date string: \(createdAtISO ?? "")")
+        }
+        
+        self.createdAt = cd
+        
     }
 }

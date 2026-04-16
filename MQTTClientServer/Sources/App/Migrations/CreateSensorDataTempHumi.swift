@@ -15,11 +15,12 @@ struct CreateSensorDataTempHumi: AsyncMigration {
     func prepare(on database: Database) async throws {
         try await database.schema(SensorDataTempHumi.schema)
             .field("id",            .int,   .identifier(auto: true))
-            .field("sensor_type",          .int)
+            .field("sensor_type",   .int)
             .field("sensor_id",     .int)
             .field("temperature",   .double)
             .field("humidity",      .double)
-            .field("created_at",    .string)
+            .field("created_at",    .datetime)
+            .field("created_at_iso",.string)
             .field("received_at",   .datetime)
             .create()
     }
