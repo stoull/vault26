@@ -25,6 +25,15 @@ actor MQTTMessageProcessor {
                 deviceType: deviceType,
                 sensorId: sensorId
             )
+            return
+        }
+
+        // 匹配 device/system/+/device_info，写入 system_device_snapshots
+        let deviceInfoPattern = "device/system/+/device_info"
+        if matchesMQTTPattern(topic: topic, pattern: deviceInfoPattern),
+           let deviceIdStr = extractFromTopic(topic, pattern: deviceInfoPattern, wildcardIndex: 0),
+           let deviceId = Int(deviceIdStr) {
+            await saveSystemDeviceSnapshotData(topic: topic, payload: payloadString, deviceId: deviceId)
         }
     }
     
@@ -110,6 +119,118 @@ actor MQTTMessageProcessor {
         } catch {
             logger.error("Save failed after retries: \(error)")
         }
+    }
+
+    /// 将 `device/system/+/device_info` 的 JSON 写入 `system_device_snapshots`（与旧 MySQL 插入逻辑对齐；`os_version` 使用 JSON 的 `os_version`，`unique_id` 写入 `extra_data`）
+    private func saveSystemDeviceSnapshotData(topic: String, payload: String, deviceId: Int) async {
+        guard let data = payload.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else {
+            logger.warning("device_info invalid JSON on topic \(topic)")
+            return
+        }
+
+        guard let createdAtISO = jsonStringNonEmpty(json, key: "created_at"),
+              jsonStringNonEmpty(json, key: "unique_id") != nil
+        else {
+            logger.warning("device_info missing created_at or unique_id topic=\(topic) payload=\(payload)")
+            return
+        }
+
+        let record = SystemDeviceSnapshot()
+        record.$device.id = deviceId
+        record.createdAtISO = createdAtISO
+        record.timestamp = Date()
+        record.platform = jsonStringNonEmpty(json, key: "platform")
+        record.osVersion = jsonStringNonEmpty(json, key: "os_version")
+        record.cpuFrequencyMhz = jsonIntOptional(json, key: "cpu_frequency_mhz")
+        record.cpuTemperature = jsonDouble(json, key: "cpu_temperature")
+        record.totalStorageBytes = jsonInt64Optional(json, key: "total_storage_bytes")
+        record.usedStorageBytes = jsonInt64Optional(json, key: "used_storage_bytes")
+        record.freeStorageBytes = jsonInt64Optional(json, key: "free_storage_bytes")
+        record.storageUsagePercent = jsonDouble(json, key: "storage_usage_percent")
+        record.totalMemoryBytes = jsonInt64Optional(json, key: "total_memory_bytes")
+        record.usedMemoryBytes = jsonInt64Optional(json, key: "used_memory_bytes")
+        record.freeMemoryBytes = jsonInt64Optional(json, key: "free_memory_bytes")
+        record.memoryUsagePercent = jsonDouble(json, key: "memory_usage_percent")
+        record.uptimeSeconds = jsonInt64Optional(json, key: "uptime_seconds")
+        record.resetReason = jsonIntDefault(json, key: "reset_reason")
+        record.batteryLevelPercent = jsonDouble(json, key: "battery_level_percent")
+        record.ip = jsonStringNonEmpty(json, key: "ip")
+        record.mac = jsonStringNonEmpty(json, key: "mac")
+        record.subnet = jsonStringNonEmpty(json, key: "subnet")
+        record.dns = jsonStringNonEmpty(json, key: "dns")
+        record.gateway = jsonStringNonEmpty(json, key: "gateway")
+        record.rssi = jsonIntOptional(json, key: "rssi")
+        record.extraData = jsonExtraDataString(json)
+
+        do {
+            if let dbManager = self.dbManager {
+                try await dbManager.withRetry(maxAttempts: 3, delay: .seconds(2)) {
+                    try await record.save(on: dbManager.db())
+                }
+                logger.info("Saved SystemDeviceSnapshot topic=\(topic) device_id=\(deviceId)")
+            } else {
+                logger.warning("No DatabaseManager available: skipping device_info for topic=\(topic)")
+            }
+        } catch {
+            logger.error("SystemDeviceSnapshot save failed after retries: \(error)")
+        }
+    }
+
+    private func jsonExtraDataString(_ json: [String: Any]) -> String? {
+        var extra: [String: Any] = [:]
+        if let uid = jsonStringNonEmpty(json, key: "unique_id") {
+            extra["unique_id"] = uid
+        }
+        guard !extra.isEmpty,
+              let d = try? JSONSerialization.data(withJSONObject: extra),
+              let s = String(data: d, encoding: .utf8)
+        else { return nil }
+        return s
+    }
+
+    private func jsonStringNonEmpty(_ json: [String: Any], key: String) -> String? {
+        guard let s = json[key] as? String else { return nil }
+        let t = s.trimmingCharacters(in: .whitespacesAndNewlines)
+        return t.isEmpty ? nil : t
+    }
+
+    /// 与旧 SwiftyJSON `intValue` 类似：缺省或无法解析时为 0
+    private func jsonIntDefault(_ json: [String: Any], key: String) -> Int {
+        if let i = json[key] as? Int { return i }
+        if let d = json[key] as? Double { return Int(d) }
+        if let n = json[key] as? NSNumber { return n.intValue }
+        if let s = json[key] as? String {
+            let t = s.trimmingCharacters(in: .whitespacesAndNewlines)
+            return Int(t) ?? 0
+        }
+        return 0
+    }
+
+    private func jsonIntOptional(_ json: [String: Any], key: String) -> Int? {
+        if let i = json[key] as? Int { return i }
+        if let d = json[key] as? Double { return Int(d) }
+        if let n = json[key] as? NSNumber { return n.intValue }
+        if let s = json[key] as? String {
+            let t = s.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !t.isEmpty else { return nil }
+            return Int(t)
+        }
+        return nil
+    }
+
+    private func jsonInt64Optional(_ json: [String: Any], key: String) -> Int64? {
+        if let i = json[key] as? Int { return Int64(i) }
+        if let i = json[key] as? Int64 { return i }
+        if let d = json[key] as? Double { return Int64(d) }
+        if let n = json[key] as? NSNumber { return n.int64Value }
+        if let s = json[key] as? String {
+            let t = s.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !t.isEmpty else { return nil }
+            return Int64(t)
+        }
+        return nil
     }
 
     private func jsonDouble(_ json: [String: Any], key: String) -> Double? {

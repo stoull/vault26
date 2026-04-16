@@ -42,7 +42,7 @@ func buildApplication() async throws -> some ApplicationProtocol {
     try await dbManager.runMigrations([
         CreateSensorDataTempHumi(),
         CreateSystemDevices(),
-        CreateDeviceSnapshots()
+        CreateSystemDeviceSnapshots()
         // AddSensorTypeToSensorDataTempHumi()
     ])
 

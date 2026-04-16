@@ -1,5 +1,5 @@
 //
-//  CreateDeviceSnapshots.swift
+//  CreateSystemDeviceSnapshots.swift
 //  MQTTClientServer
 //
 //  空库初始化：创建 system_device_snapshots
@@ -9,8 +9,10 @@ import Foundation
 import Fluent
 import SQLKit
 
-struct CreateDeviceSnapshots: AsyncMigration {
-    var name: String { "CreateDeviceSnapshots" }
+struct CreateSystemDeviceSnapshots: AsyncMigration {
+    var name: String { "CreateSystemDeviceSnapshots" }
+
+    func prepare(on database: Database) async throws {
         try await database.schema(SystemDeviceSnapshot.schema)
             .field("id", .int, .identifier(auto: true))
             .field("device_id", .int, .required)
