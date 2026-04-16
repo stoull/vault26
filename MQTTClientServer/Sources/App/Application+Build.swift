@@ -57,10 +57,10 @@ func buildApplication() async throws -> some ApplicationProtocol {
     
     let app = Application(
         router: router,
-        configuration: .init(address: .hostname("0.0.0.0", port: 8080))
+        configuration: .init(address: .hostname("0.0.0.0", port: 8044))
     )
 
-    logger.info("Application started on :8080")
+    logger.info("Application started on :8044")
     return app
 }
 
