@@ -177,9 +177,9 @@ actor MQTTMessageProcessor {
 
     private func jsonExtraDataString(_ json: [String: Any]) -> String? {
         var extra: [String: Any] = [:]
-        if let uid = jsonStringNonEmpty(json, key: "unique_id") {
-            extra["unique_id"] = uid
-        }
+//        if let uid = jsonStringNonEmpty(json, key: "unique_id") {
+//            extra["unique_id"] = uid
+//        }
         guard !extra.isEmpty,
               let d = try? JSONSerialization.data(withJSONObject: extra),
               let s = String(data: d, encoding: .utf8)
