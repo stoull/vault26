@@ -14,5 +14,7 @@
   "unique_id 不能为空": "unique_id must not be empty",
   "未找到记录": "No matching record",
   "未找到 id=%lld 的设备": "No device found for id=%lld",
-  "删除成功": "Deleted successfully"
+  "删除成功": "Deleted successfully",
+  "更新成功": "Updated successfully",
+  "日期时间格式无效": "Invalid date/time format"
 }

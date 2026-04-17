@@ -2,7 +2,7 @@
 //  SystemDeviceRoutes.swift
 //  MQTTClientServer
 //
-//  SystemDevice 的 JSON API：查询、删除、添加（请求体均为 application/json）
+//  SystemDevice 的 JSON API：查询、删除、添加、更新（请求体均为 application/json）
 //
 
 import Foundation
@@ -35,6 +35,20 @@ struct SystemDeviceRoutes {
 
     struct SystemDeviceDeleteRequest: Decodable {
         let id: Int
+    }
+
+    /// 按 `id` 更新行：仅对 JSON 中出现的非 null 字段写库（未出现的字段保持不变）。
+    struct SystemDeviceUpdateRequest: Decodable {
+        let id: Int
+        let unique_id: String?
+        let device_type: Int?
+        let device_name: String?
+        let description: String?
+        let location: String?
+        let group_name: String?
+        let created_at: String?
+        let last_seen: String?
+        let is_active: Int?
     }
 
     // MARK: - Response `data` 载荷
@@ -187,6 +201,102 @@ struct SystemDeviceRoutes {
                 let dto = try SystemDeviceDTO(model: device)
                 try await device.delete(on: db)
                 return .success(SystemDeviceMutationData(device: dto), message: _t("删除成功", comment: "After device deleted"))
+            } catch {
+                return .failure(
+                    code: .internalServerError,
+                    message: String(describing: error),
+                    data: SystemDeviceMutationData(device: nil)
+                )
+            }
+        }
+
+        group.post("update") { request, context -> UnifiedAPIResponse<SystemDeviceMutationData> in
+            let body = try await request.decode(as: SystemDeviceUpdateRequest.self, context: context)
+            let db = dbManager.db()
+
+            do {
+                guard let device = try await SystemDevice.find(body.id, on: db) else {
+                    return .failure(
+                        code: .notFound,
+                        message: String(
+                            format: _t("未找到 id=%lld 的设备", comment: "Update device by id not found"),
+                            Int64(body.id)
+                        ),
+                        data: SystemDeviceMutationData(device: nil)
+                    )
+                }
+
+                var touched = false
+                if let raw = body.unique_id {
+                    let uid = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !uid.isEmpty else {
+                        return .failure(
+                            code: .badRequest,
+                            message: _t("unique_id 不能为空", comment: "Validation when unique_id is empty on update"),
+                            data: SystemDeviceMutationData(device: nil)
+                        )
+                    }
+                    device.uniqueId = uid
+                    touched = true
+                }
+                if let v = body.device_type {
+                    device.deviceType = v
+                    touched = true
+                }
+                if let v = body.device_name {
+                    device.deviceName = v
+                    touched = true
+                }
+                if let v = body.description {
+                    device.deviceDescription = v
+                    touched = true
+                }
+                if let v = body.location {
+                    device.location = v
+                    touched = true
+                }
+                if let v = body.group_name {
+                    device.groupName = v
+                    touched = true
+                }
+                if let raw = body.created_at {
+                    let s = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !s.isEmpty {
+                        guard let d = parseISO8601(raw) else {
+                            return .failure(
+                                code: .badRequest,
+                                message: _t("日期时间格式无效", comment: "created_at on update"),
+                                data: SystemDeviceMutationData(device: nil)
+                            )
+                        }
+                        device.createdAt = d
+                        touched = true
+                    }
+                }
+                if let raw = body.last_seen {
+                    let s = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !s.isEmpty {
+                        guard let d = parseISO8601(raw) else {
+                            return .failure(
+                                code: .badRequest,
+                                message: _t("日期时间格式无效", comment: "last_seen on update"),
+                                data: SystemDeviceMutationData(device: nil)
+                            )
+                        }
+                        device.lastSeen = d
+                        touched = true
+                    }
+                }
+                if let v = body.is_active {
+                    device.isActive = v
+                    touched = true
+                }
+
+                if touched {
+                    try await device.update(on: db)
+                }
+                let dto = try SystemDeviceDTO(model: device)
+                return .success(SystemDeviceMutationData(device: dto), message: _t("更新成功", comment: "After device updated"))
             } catch {
                 return .failure(
                     code: .internalServerError,
