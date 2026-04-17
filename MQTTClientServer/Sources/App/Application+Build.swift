@@ -53,10 +53,12 @@ func buildApplication() async throws -> some ApplicationProtocol {
 
     // 5. 配置 Hummingbird 路由
     let router = Router()
+    router.middlewares.add(APILanguageMiddleware())
     router.middlewares.add(FileMiddleware()) // 默认从当前工作目录下的 public 提供文件
      MQTTCommandRoutes(mqttService: mqttService).addRoutes(to: router)
 
     StatusRoutes().addRoutes(to: router)
+    SystemDeviceRoutes(dbManager: dbManager).addRoutes(to: router)
     
     let app = Application(
         router: router,

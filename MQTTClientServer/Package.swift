@@ -34,7 +34,8 @@ let package = Package(
                 .product(name: "SwiftyJSON", package: "SwiftyJSON"),
             ],
             resources: [
-                .process("config.json"),    // 走“资源处理”管线：SPM 会按文件类型决定要不要加工, xcassets、需编译/优化的资源 一般在 bundle 的 Contents/Resources/ 里
+                .process("config.json"),
+                .process("Resources"),
             ]
         ),
     ]

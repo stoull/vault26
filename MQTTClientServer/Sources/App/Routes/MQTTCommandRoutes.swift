@@ -13,46 +13,52 @@ import Hummingbird
 struct MQTTCommandRoutes {
     let mqttService: MQTTService
     let logger = Logger(label: "Routes")
-    
-    // 请求体结构
+
     struct MQTTRequest: Decodable {
-        let topic: String    // e.g. "devices/light01/cmd"
-        let payload: String  // e.g. "{\"action\":\"on\"}"
-    }
-
-    // 响应结构
-    struct MQTTCommandResponse: ResponseEncodable {
-        let status: String
         let topic: String
+        let payload: String
     }
 
+    struct MQTTCommandData: Encodable {
+        let topic: String
+        let publish_status: String
+    }
+
+    struct MQTTPlainTextData: Encodable {
+        let text: String
+    }
+
+    struct MQTTRestartData: Encodable {
+        let result: String
+    }
 
     func addRoutes(to router: Router<some RequestContext>) {
-        
-        router.post("commands") { request, context -> MQTTCommandResponse in
-            
+        router.post("commands") { request, context -> UnifiedAPIResponse<MQTTCommandData> in
             let cmd = try await request.decode(as: MQTTRequest.self, context: context)
-            try await mqttService.publish(topic: cmd.topic, payload: cmd.payload)
-            let resp = MQTTCommandResponse(status: "published", topic: cmd.topic)
-            // Hummingbird 会自动将 MQTTCommandResponse <ResponseEncodable> 编码为 JSON 并设置 Content-Type
-            return resp
+            do {
+                try await mqttService.publish(topic: cmd.topic, payload: cmd.payload)
+                return .success(MQTTCommandData(topic: cmd.topic, publish_status: "published"))
+            } catch {
+                return .failure(
+                    code: .internalServerError,
+                    message: String(describing: error),
+                    data: MQTTCommandData(topic: cmd.topic, publish_status: "failed")
+                )
+            }
         }
 
-        // 健康检查
-        router.get("mqtt_health") { _, _ in
-            return Response(status: .ok, body: .init(byteBuffer: .init(string: "OK")))
+        router.get("mqtt_health") { _, _ -> UnifiedAPIResponse<MQTTPlainTextData> in
+            .success(MQTTPlainTextData(text: "OK"))
         }
 
-        // 运行时诊断：返回 listener 状态和最近一次 subscribe ack
-        router.get("mqtt_status") { _, _ in
+        router.get("mqtt_status") { _, _ -> UnifiedAPIResponse<MQTTPlainTextData> in
             let status = await mqttService.listenerStatus()
-            return Response(status: .ok, body: .init(byteBuffer: .init(string: status)))
+            return .success(MQTTPlainTextData(text: status))
         }
 
-        // 允许远程重启 listener（运维用）
-        router.post("mqtt_restart") { _, _ in
+        router.post("mqtt_restart") { _, _ -> UnifiedAPIResponse<MQTTRestartData> in
             await mqttService.restartListener()
-            return Response(status: .ok, body: .init(byteBuffer: .init(string: "restarted")))
+            return .success(MQTTRestartData(result: "restarted"))
         }
     }
 }

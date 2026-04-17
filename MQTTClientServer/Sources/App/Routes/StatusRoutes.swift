@@ -6,32 +6,25 @@
 //
 
 import Foundation
-
-import Foundation
 import Hummingbird
 
 struct StatusRoutes {
-    
-    // 请求体结构
-    struct StatusRequest: Decodable {
-        let status: String
+
+    struct StatusData: Encodable {
+        let online: Bool
     }
 
-    // 响应结构
-    struct StatusResponse: ResponseEncodable {
-        let status: Bool
-        let message: String
+    struct HealthData: Encodable {
+        let ok: Bool
     }
-    
+
     func addRoutes(to router: Router<some RequestContext>) {
-        router.get("status") { request, context -> StatusResponse in
-            let cmd = try await request.decode(as: StatusRequest.self, context: context)
-            return StatusResponse(status: true, message: "Server is running")
+        router.get("status") { _, _ -> UnifiedAPIResponse<StatusData> in
+            .success(StatusData(online: true))
         }
-        
-        // 健康检查
-        router.get("health") { _, _ in
-            return Response(status: .ok, body: .init(byteBuffer: .init(string: "OK")))
+
+        router.get("health") { _, _ -> UnifiedAPIResponse<HealthData> in
+            .success(HealthData(ok: true))
         }
     }
 }

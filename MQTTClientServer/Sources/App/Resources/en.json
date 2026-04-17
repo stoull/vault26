@@ -1,0 +1,18 @@
+{
+  "操作成功": "Operation succeeded",
+  "请求失败": "Request failed",
+  "请求参数错误": "Invalid request parameters",
+  "未授权或登录已失效": "Unauthorized or session expired",
+  "没有权限执行此操作": "Permission denied",
+  "请求的资源不存在": "Resource not found",
+  "资源冲突，请检查是否重复提交": "Resource conflict; duplicate submission?",
+  "请求无法通过业务校验": "Request failed business validation",
+  "请求过于频繁，请稍后再试": "Too many requests; try again later",
+  "服务器内部错误": "Internal server error",
+  "网关或上游服务异常": "Bad gateway or upstream error",
+  "服务暂时不可用，请稍后再试": "Service temporarily unavailable",
+  "unique_id 不能为空": "unique_id must not be empty",
+  "未找到记录": "No matching record",
+  "未找到 id=%lld 的设备": "No device found for id=%lld",
+  "删除成功": "Deleted successfully"
+}
