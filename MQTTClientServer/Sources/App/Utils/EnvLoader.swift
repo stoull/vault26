@@ -37,8 +37,8 @@ struct EnvLoader {
         // 1. 加载系统环境变量（当前进程的环境变量）
         let systemEnv = Environment()
         
-        let syste_pwd = systemEnv.get("pwd", as: String.self)
-        logger.info("pwd-path: \(syste_pwd ?? "")")
+        // let syste_pwd = systemEnv.get("pwd", as: String.self)
+        // logger.info("pwd-path: \(syste_pwd ?? "")")
         
         var hb_env = systemEnv
         

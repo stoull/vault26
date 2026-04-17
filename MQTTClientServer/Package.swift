@@ -36,6 +36,7 @@ let package = Package(
                 .product(name: "NIOPosix", package: "swift-nio"),
                 .product(name: "SwiftyJSON", package: "SwiftyJSON"),
             ],
+            exclude: ["Migrations/FluentMigrationReadMe.md"],// 排除文件
             resources: [
                 .process("config.json"),
                 .process("Resources"),
