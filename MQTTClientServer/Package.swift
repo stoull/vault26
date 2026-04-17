@@ -15,6 +15,7 @@ let package = Package(
         // MySQL/MariaDB driver
         .package(url: "https://github.com/vapor/fluent-mysql-driver.git", from: "4.4.0"),
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.65.0"),
+        .package(url: "https://github.com/apple/swift-nio-ssl.git", from: "2.14.0"),
         .package(url: "https://github.com/vapor/sql-kit.git", from: "3.28.0"),
         
         // SwiftyJSON 改使用手动引入
@@ -26,6 +27,8 @@ let package = Package(
             dependencies: [
                 // 声明这个 target 要链接其中哪个 Package 构建好的 product
                 .product(name: "Hummingbird", package: "hummingbird"),
+                .product(name: "HummingbirdTLS", package: "hummingbird"),
+                .product(name: "NIOSSL", package: "swift-nio-ssl"),
                 .product(name: "MQTTNIO", package: "mqtt-nio"),
                 .product(name: "Fluent", package: "fluent"),
                 .product(name: "FluentMySQLDriver", package: "fluent-mysql-driver"),

@@ -7,6 +7,7 @@
 
 import Foundation
 import Hummingbird
+import HummingbirdTLS
 import Fluent
 import NIOPosix
 import Logging
@@ -59,14 +60,25 @@ func buildApplication() async throws -> some ApplicationProtocol {
 
     StatusRoutes().addRoutes(to: router)
     SystemDeviceRoutes(dbManager: dbManager).addRoutes(to: router)
-    
-    let app = Application(
-        router: router,
-        configuration: .init(address: .hostname("0.0.0.0", port: 8044))
-    )
 
-    logger.info("Application started on :8044")
-    return app
+    let envForHTTP = try await HTTPSTLSConfiguration.mergedEnvironment()
+    let listenPort = HTTPSTLSConfiguration.httpListenPort(env: envForHTTP)
+    let bindAddress = BindAddress.hostname("0.0.0.0", port: listenPort)
+
+    if let tlsConfiguration = try HTTPSTLSConfiguration.makeServerTLSConfigurationIfConfigured(env: envForHTTP) {
+        logger.info("HTTPS enabled (TLS PEM), listening on 0.0.0.0:\(listenPort)")
+        return try Application(
+            router: router,
+            server: .tls(.http1(), tlsConfiguration: tlsConfiguration),
+            configuration: .init(address: bindAddress)
+        )
+    }
+
+    logger.info("HTTP (no TLS), listening on 0.0.0.0:\(listenPort)")
+    return Application(
+        router: router,
+        configuration: .init(address: bindAddress)
+    )
 }
 
 // Shutdown helper to be called by the application exit path

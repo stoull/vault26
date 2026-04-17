@@ -19,6 +19,7 @@ nginx/conf.d/
 
 # ==== 环境和IDE ====
 # Environments
+certs/
 .env
 .venv
 env/
