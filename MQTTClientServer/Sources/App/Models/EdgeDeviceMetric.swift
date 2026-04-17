@@ -1,22 +1,22 @@
 //
-//  SystemDeviceSnapshot.swift
+//  EdgeDeviceMetric.swift
 //  MQTTClientServer
 //
-//  Fluent 映射：已存在的 MariaDB/MySQL 表 system_device_snapshots
+//  Fluent 映射：已存在的 MariaDB/MySQL 表 edge_device_metric
 //
 
 import Foundation
 import Fluent
 
-/// 设备状态快照（时序），对应 Python `SystemDeviceSnapshot` / 表 `system_device_snapshots`
-final class SystemDeviceSnapshot: Model, @unchecked Sendable {
-    static let schema = "system_device_snapshots"
-
+/// 设备状态快照（时序），对应 Python `EdgeDeviceMetric` / 表 `edge_device_metric`
+final class EdgeDeviceMetric: Model, @unchecked Sendable {
+    static let schema = "edge_device_metric"
+    
     @ID(custom: "id", generatedBy: .database)
     var id: Int?
 
     @Parent(key: "device_id")
-    var device: SystemDevice
+    var device: EdgeDevice
 
     @OptionalField(key: "created_at_iso")
     var createdAtISO: String?

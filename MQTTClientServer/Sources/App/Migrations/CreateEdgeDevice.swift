@@ -2,18 +2,18 @@
 //  CreateSystemDevices.swift
 //  MQTTClientServer
 //
-//  空库初始化：创建 system_devices
+//  空库初始化：创建 edge_device
 //
 
 import Foundation
 import Fluent
 import SQLKit
 
-struct CreateSystemDevices: AsyncMigration {
-    var name: String { "CreateSystemDevices" }
+struct CreateEdgeDevice: AsyncMigration {
+    var name: String { "CreateEdgeDevice" }
 
     func prepare(on database: Database) async throws {
-        try await database.schema(SystemDevice.schema)
+        try await database.schema(EdgeDevice.schema)
             .field("id", .int, .identifier(auto: true))
             .field("unique_id", .string, .required)
             .field("device_type", .int, .required)
@@ -32,7 +32,7 @@ struct CreateSystemDevices: AsyncMigration {
     }
 
     func revert(on database: Database) async throws {
-        try await database.schema(SystemDeviceSnapshot.schema).delete()
+        try await database.schema(EdgeDeviceMetric.schema).delete()
     }
 
     /// 为带 `comment=` 的列写入 MySQL `COMMENT`（列类型须与 Fluent 已建表一致）
@@ -43,7 +43,7 @@ struct CreateSystemDevices: AsyncMigration {
 
         try await sql.raw(
             """
-            ALTER TABLE `system_devices`
+            ALTER TABLE `edge_device`
               MODIFY COLUMN `device_type` BIGINT NOT NULL COMMENT '设备类型:  1=Pico W, 2=树莓派, 3=ESP32.. .'
             """
         ).run()

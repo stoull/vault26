@@ -18,22 +18,19 @@ actor MQTTMessageProcessor {
 
         
         // 匹配 sensor/env/+/+/data 模式
-        if let (deviceType, sensorId) = matchSensorEnvTopic(topic) {
-            await saveSensorEnvData(
-                topic: topic,
-                payload: payloadString,
-                deviceType: deviceType,
-                sensorId: sensorId
-            )
-            return
+        let pattern = "sensor/env/+/+/data"
+        if matchesMQTTPattern(topic: topic, pattern: pattern),
+              let deviceType = extractFromTopic(topic, pattern: pattern, wildcardIndex: 0),
+           let sensorId = extractFromTopic(topic, pattern: pattern, wildcardIndex: 1) {
+            await saveSensorEnvData(topic: topic, payload: payloadString, deviceType: deviceType, sensorId: sensorId)
         }
 
-        // 匹配 device/system/+/device_info，写入 system_device_snapshots
+        // 匹配 device/system/+/device_info，写入 edge_device_metric
         let deviceInfoPattern = "device/system/+/device_info"
         if matchesMQTTPattern(topic: topic, pattern: deviceInfoPattern),
            let deviceIdStr = extractFromTopic(topic, pattern: deviceInfoPattern, wildcardIndex: 0),
            let deviceId = Int(deviceIdStr) {
-            await saveSystemDeviceSnapshotData(topic: topic, payload: payloadString, deviceId: deviceId)
+            await saveEdgeDeviceMetricData(topic: topic, payload: payloadString, deviceId: deviceId)
         }
     }
     
@@ -121,8 +118,8 @@ actor MQTTMessageProcessor {
         }
     }
 
-    /// 将 `device/system/+/device_info` 的 JSON 写入 `system_device_snapshots`（与旧 MySQL 插入逻辑对齐；`os_version` 使用 JSON 的 `os_version`，`unique_id` 写入 `extra_data`）
-    private func saveSystemDeviceSnapshotData(topic: String, payload: String, deviceId: Int) async {
+    /// 将 `device/system/+/device_info` 的 JSON 写入 `edge_device_metric`（与旧 MySQL 插入逻辑对齐；`os_version` 使用 JSON 的 `os_version`，`unique_id` 写入 `extra_data`）
+    private func saveEdgeDeviceMetricData(topic: String, payload: String, deviceId: Int) async {
         guard let data = payload.data(using: .utf8),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
         else {
@@ -137,7 +134,7 @@ actor MQTTMessageProcessor {
             return
         }
 
-        let record = SystemDeviceSnapshot()
+        let record = EdgeDeviceMetric()
         record.$device.id = deviceId
         record.createdAtISO = createdAtISO
         record.timestamp = Date()
@@ -169,12 +166,12 @@ actor MQTTMessageProcessor {
                 try await dbManager.withRetry(maxAttempts: 3, delay: .seconds(2)) {
                     try await record.save(on: dbManager.db())
                 }
-                logger.info("Saved SystemDeviceSnapshot topic=\(topic) device_id=\(deviceId)")
+                logger.info("Saved EdgeDeviceMetric topic=\(topic) device_id=\(deviceId)")
             } else {
                 logger.warning("No DatabaseManager available: skipping device_info for topic=\(topic)")
             }
         } catch {
-            logger.error("SystemDeviceSnapshot save failed after retries: \(error)")
+            logger.error("EdgeDeviceMetric save failed after retries: \(error)")
         }
     }
 
@@ -243,16 +240,6 @@ actor MQTTMessageProcessor {
             return Double(trimmed)
         }
         return nil
-    }
-    
-    /// 匹配 `sensor/env/+/+/data`，成功时返回 (device_type, sensor_id)
-    private func matchSensorEnvTopic(_ topic: String) -> (deviceType: String, sensorId: String)? {
-        let pattern = "sensor/env/+/+/data"
-        guard matchesMQTTPattern(topic: topic, pattern: pattern),
-              let deviceType = extractFromTopic(topic, pattern: pattern, wildcardIndex: 0),
-              let sensorId = extractFromTopic(topic, pattern: pattern, wildcardIndex: 1)
-        else { return nil }
-        return (deviceType, sensorId)
     }
     
     // MARK: - MQTT Topic Matching Utilities

@@ -10,7 +10,7 @@ import Fluent
 import Hummingbird
 
 /// `POST /api/system-devices/*`，请求与响应均为 JSON（外层为 ``UnifiedAPIResponse``）
-struct SystemDeviceRoutes {
+struct EdgeDeviceRoutes {
     let dbManager: DatabaseManager
 
     // MARK: - Request DTOs（JSON snake_case）
@@ -65,7 +65,7 @@ struct SystemDeviceRoutes {
         let last_seen: String
         let is_active: Int
 
-        init(model: SystemDevice) throws {
+        init(model: EdgeDevice) throws {
             guard let id = model.id else {
                 throw SystemDeviceRouteError.missingModelId
             }
@@ -112,7 +112,7 @@ struct SystemDeviceRoutes {
             let lastSeen = parseISO8601(body.last_seen) ?? now
             let active = body.is_active ?? 1
 
-            let device = SystemDevice()
+            let device = EdgeDevice()
             device.uniqueId = body.unique_id.trimmingCharacters(in: .whitespacesAndNewlines)
             device.deviceType = body.device_type
             device.deviceName = body.device_name
@@ -149,9 +149,9 @@ struct SystemDeviceRoutes {
             let db = dbManager.db()
 
             do {
-                let models: [SystemDevice]
+                let models: [EdgeDevice]
                 if let id = body.id {
-                    if let one = try await SystemDevice.find(id, on: db) {
+                    if let one = try await EdgeDevice.find(id, on: db) {
                         models = [one]
                     } else {
                         return .success(
@@ -160,12 +160,12 @@ struct SystemDeviceRoutes {
                         )
                     }
                 } else if let uid = body.unique_id?.trimmingCharacters(in: .whitespacesAndNewlines), !uid.isEmpty {
-                    models = try await SystemDevice.query(on: db)
+                    models = try await EdgeDevice.query(on: db)
                         .filter(\.$uniqueId == uid)
                         .all()
                 } else {
                     let cap = min(max(body.limit ?? 50, 1), 200)
-                    models = try await SystemDevice.query(on: db)
+                    models = try await EdgeDevice.query(on: db)
                         //.sort(\.$id, .descending)
                         .sort(\.$id, .descending)
                         .limit(cap)
@@ -188,7 +188,7 @@ struct SystemDeviceRoutes {
             let db = dbManager.db()
 
             do {
-                guard let device = try await SystemDevice.find(body.id, on: db) else {
+                guard let device = try await EdgeDevice.find(body.id, on: db) else {
                     return .failure(
                         code: .notFound,
                         message: String(
@@ -215,7 +215,7 @@ struct SystemDeviceRoutes {
             let db = dbManager.db()
 
             do {
-                guard let device = try await SystemDevice.find(body.id, on: db) else {
+                guard let device = try await EdgeDevice.find(body.id, on: db) else {
                     return .failure(
                         code: .notFound,
                         message: String(

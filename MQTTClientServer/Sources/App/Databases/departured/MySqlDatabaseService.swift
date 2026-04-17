@@ -422,7 +422,7 @@ class MySqlDatabaseService {
         let timestamp = Date()
         
         let insertSQL = """
-        INSERT INTO system_device_snapshots (
+        INSERT INTO edge_device_metric (
             device_id, created_at_iso, timestamp, platform, os_version, 
             cpu_frequency_mhz, cpu_temperature, 
             total_storage_bytes, used_storage_bytes, free_storage_bytes, storage_usage_percent,

@@ -1,19 +1,19 @@
 //
-//  CreateSystemDeviceSnapshots.swift
+//  CreateEdgeDeviceMetric.swift
 //  MQTTClientServer
 //
-//  空库初始化：创建 system_device_snapshots
+//  空库初始化：创建 edge_device_metric
 //
 
 import Foundation
 import Fluent
 import SQLKit
 
-struct CreateSystemDeviceSnapshots: AsyncMigration {
-    var name: String { "CreateSystemDeviceSnapshots" }
+struct CreateEdgeDeviceMetric: AsyncMigration {
+    var name: String { "CreateEdgeDeviceMetric" }
 
     func prepare(on database: Database) async throws {
-        try await database.schema(SystemDeviceSnapshot.schema)
+        try await database.schema(EdgeDeviceMetric.schema)
             .field("id", .int, .identifier(auto: true))
             .field("device_id", .int, .required)
             .field("created_at_iso", .string)
@@ -42,7 +42,7 @@ struct CreateSystemDeviceSnapshots: AsyncMigration {
             .field("extra_data", .json)
             .foreignKey(
                 "device_id",
-                references: SystemDevice.schema,
+                references: EdgeDevice.schema,
                 "id",
                 onDelete: .cascade,
                 name: "fk_system_device_snapshot_device"
@@ -54,7 +54,7 @@ struct CreateSystemDeviceSnapshots: AsyncMigration {
     }
 
     func revert(on database: Database) async throws {
-        try await database.schema(SystemDeviceSnapshot.schema).delete()
+        try await database.schema(EdgeDeviceMetric.schema).delete()
     }
 
     /// 为带 `comment=` 的列写入 MySQL `COMMENT`（列类型须与 Fluent 已建表一致）
@@ -65,7 +65,7 @@ struct CreateSystemDeviceSnapshots: AsyncMigration {
 
         try await sql.raw(
             """
-            ALTER TABLE `system_device_snapshots`
+            ALTER TABLE `edge_device_metric`
               MODIFY COLUMN `total_storage_bytes` BIGINT NULL COMMENT '总存储空间（字节）',
               MODIFY COLUMN `used_storage_bytes` BIGINT NULL COMMENT '已用存储（字节）',
               MODIFY COLUMN `free_storage_bytes` BIGINT NULL COMMENT '剩余存储（字节）',

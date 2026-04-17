@@ -1,16 +1,16 @@
 //
-//  SystemDevice.swift
+//  EdgeDevice.swift
 //  MQTTClientServer
 //
-//  Fluent 映射：已存在的 MariaDB/MySQL 表 system_devices
+//  Fluent 映射：已存在的 MariaDB/MySQL 表 edge_device
 //
 
 import Foundation
 import Fluent
 
-/// 设备基础信息，对应 Python `SystemDevice` / 表 `system_devices`
-final class SystemDevice: Model, @unchecked Sendable {
-    static let schema = "system_devices"
+/// 设备基础信息，对应 Python `SystemDevice` / 表 `edge_device`
+final class EdgeDevice: Model, @unchecked Sendable {
+    static let schema = "edge_device"
 
     @ID(custom: "id", generatedBy: .database)
     var id: Int?
@@ -45,7 +45,7 @@ final class SystemDevice: Model, @unchecked Sendable {
     var isActive: Int
 
     @Children(for: \.$device)
-    var snapshots: [SystemDeviceSnapshot]
+    var metric: [EdgeDeviceMetric]
 
     init() {}
 }

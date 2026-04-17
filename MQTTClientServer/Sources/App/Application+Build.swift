@@ -42,8 +42,8 @@ func buildApplication() async throws -> some ApplicationProtocol {
     // 3. 运行迁移（自动建表，已存在则跳过）
     try await dbManager.runMigrations([
         CreateSensorDataTempHumi(),
-        CreateSystemDevices(),
-        CreateSystemDeviceSnapshots()
+        CreateEdgeDevice(),
+        CreateEdgeDeviceMetric()
         // AddSensorTypeToSensorDataTempHumi()
     ])
 
@@ -59,7 +59,7 @@ func buildApplication() async throws -> some ApplicationProtocol {
      MQTTCommandRoutes(mqttService: mqttService).addRoutes(to: router)
 
     StatusRoutes().addRoutes(to: router)
-    SystemDeviceRoutes(dbManager: dbManager).addRoutes(to: router)
+    EdgeDeviceRoutes(dbManager: dbManager).addRoutes(to: router)
 
     let envForHTTP = try await HTTPSTLSConfiguration.mergedEnvironment()
     let listenPort = HTTPSTLSConfiguration.httpListenPort(env: envForHTTP)
