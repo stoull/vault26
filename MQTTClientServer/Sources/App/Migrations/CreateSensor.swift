@@ -59,13 +59,12 @@ struct CreateSensor: AsyncMigration {
             throw CommentMigrationError.sqlDatabaseRequired
         }
 
+        // 勿对 `device_id`、`type` 做 MODIFY：外键列，MySQL 会拒绝。
         try await sql.raw(
             """
             ALTER TABLE `sensor`
-              MODIFY COLUMN `device_id` INT NOT NULL COMMENT '属于哪个设备',
               MODIFY COLUMN `name` VARCHAR(255) NOT NULL COMMENT '显示名（Temperature）',
               MODIFY COLUMN `code` VARCHAR(255) NOT NULL COMMENT '唯一标识（temperature）',
-              MODIFY COLUMN `type` INT NOT NULL COMMENT '外键 sensor_type.id（传感类型）',
               MODIFY COLUMN `unit` VARCHAR(255) NULL COMMENT '单位（°C/%）'
             """
         ).run()

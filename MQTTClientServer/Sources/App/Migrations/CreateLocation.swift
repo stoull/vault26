@@ -53,12 +53,13 @@ struct CreateLocation: AsyncMigration {
             throw CommentMigrationError.sqlDatabaseRequired
         }
 
+        // 不能对 `parent_id` 做 MODIFY：列已被自引用外键 `fk_location_parent_id` 使用，MySQL 会报
+        // "Cannot change column 'parent_id': used in a foreign key constraint"。COMMENT 仅加在无 FK 绑定的列上。
         try await sql.raw(
             """
             ALTER TABLE `location`
               MODIFY COLUMN `name` VARCHAR(255) NOT NULL COMMENT '显示名称（Living Room）',
               MODIFY COLUMN `code` VARCHAR(255) NOT NULL COMMENT '唯一编码（livingroom）',
-              MODIFY COLUMN `parent_id` INT NULL COMMENT '父级（支持层级）',
               MODIFY COLUMN `type` VARCHAR(255) NOT NULL COMMENT '类型（home/room/building）'
             """
         ).run()

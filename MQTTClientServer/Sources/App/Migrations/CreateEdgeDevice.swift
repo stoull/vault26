@@ -7,7 +7,6 @@
 
 import Foundation
 import Fluent
-import SQLKit
 
 struct CreateEdgeDevice: AsyncMigration {
     var name: String { "CreateEdgeDevice" }
@@ -33,30 +32,9 @@ struct CreateEdgeDevice: AsyncMigration {
                 name: "fk_edge_device_device_type_id"
             )
             .create()
-
-        // Fluent schema API 不生成列 COMMENT；用 ALTER 与 SQLAlchemy 的 comment= 对齐（类型与 Fluent MySQL 委托一致）
-        try await Self.applyColumnComments(on: database)
     }
 
     func revert(on database: Database) async throws {
         try await database.schema(EdgeDevice.schema).delete()
-    }
-
-    /// 为带 `comment=` 的列写入 MySQL `COMMENT`（列类型须与 Fluent 已建表一致）
-    private static func applyColumnComments(on database: Database) async throws {
-        guard let sql = database as? any SQLDatabase else {
-            throw CommentMigrationError.sqlDatabaseRequired
-        }
-
-        try await sql.raw(
-            """
-            ALTER TABLE `edge_device`
-              MODIFY COLUMN `device_type` INT NOT NULL COMMENT '外键 device_type.id（设备类型）'
-            """
-        ).run()
-    }
-
-    private enum CommentMigrationError: Error {
-        case sqlDatabaseRequired
     }
 }

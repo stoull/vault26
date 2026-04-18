@@ -42,12 +42,18 @@ func buildApplication() async throws -> some ApplicationProtocol {
     // 3. 运行迁移（自动建表，已存在则跳过）
     try await dbManager.runMigrations([
         CreateLocation(),
+        SeedLocation(),
         CreateDeviceType(),
+        SeedDeviceTypes(),
         CreateSensorType(),
+        SeedSensorTypes(),
         CreateDevice(),
+        SeedDevices(),
         CreateSensor(),
+        SeedSensors(),
         CreateSensorDataTempHumi(),
         CreateEdgeDevice(),
+        SeedEdgeDevices(),
         CreateEdgeDeviceMetric()
         // AddSensorTypeToSensorDataTempHumi()
     ])

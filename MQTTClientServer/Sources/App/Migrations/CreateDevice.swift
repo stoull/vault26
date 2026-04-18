@@ -60,14 +60,12 @@ struct CreateDevice: AsyncMigration {
             throw CommentMigrationError.sqlDatabaseRequired
         }
 
-        // Fluent 默认：整型 INT、字符串 VARCHAR(255)、布尔 TINYINT(1)、时间 DATETIME(6)（依驱动可能略有差异，与常见 Fluent-MySQL 一致）
+        // 勿对 `location_id`、`type` 做 MODIFY：列上已有外键，MySQL 会拒绝（与 CreateLocation.parent_id 相同）。
         try await sql.raw(
             """
             ALTER TABLE `device`
-              MODIFY COLUMN `location_id` INT NOT NULL COMMENT '属于哪个房间/位置',
               MODIFY COLUMN `name` VARCHAR(255) NOT NULL COMMENT '显示名（Living Room Env）',
               MODIFY COLUMN `code` VARCHAR(255) NOT NULL COMMENT '唯一标识（env_001）',
-              MODIFY COLUMN `type` INT NOT NULL COMMENT '外键 device_type.id（设备类型）',
               MODIFY COLUMN `mqtt_topic` VARCHAR(255) NOT NULL COMMENT 'MQTT 前缀（home/livingroom/env/001）',
               MODIFY COLUMN `status` VARCHAR(255) NOT NULL COMMENT 'online/offline/error'
             """
