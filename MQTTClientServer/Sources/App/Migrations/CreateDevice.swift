@@ -18,7 +18,7 @@ struct CreateDevice: AsyncMigration {
             .field("location_id", .int, .required)
             .field("name", .string, .required)
             .field("code", .string, .required)
-            .field("type", .string, .required)
+            .field("type", .int, .required)
             .field("mqtt_topic", .string, .required)
             .field("status", .string, .required)
             .field("firmware_version", .string)
@@ -37,6 +37,13 @@ struct CreateDevice: AsyncMigration {
                 "id",
                 onDelete: .cascade,
                 name: "fk_device_location_id"
+            )
+            .foreignKey(
+                "type",
+                references: DeviceType.schema,
+                "id",
+                onDelete: .restrict,
+                name: "fk_device_device_type_id"
             )
             .create()
 
@@ -60,7 +67,7 @@ struct CreateDevice: AsyncMigration {
               MODIFY COLUMN `location_id` INT NOT NULL COMMENT '属于哪个房间/位置',
               MODIFY COLUMN `name` VARCHAR(255) NOT NULL COMMENT '显示名（Living Room Env）',
               MODIFY COLUMN `code` VARCHAR(255) NOT NULL COMMENT '唯一标识（env_001）',
-              MODIFY COLUMN `type` VARCHAR(255) NOT NULL COMMENT '设备类型（env/light/sound）',
+              MODIFY COLUMN `type` INT NOT NULL COMMENT '外键 device_type.id（设备类型）',
               MODIFY COLUMN `mqtt_topic` VARCHAR(255) NOT NULL COMMENT 'MQTT 前缀（home/livingroom/env/001）',
               MODIFY COLUMN `status` VARCHAR(255) NOT NULL COMMENT 'online/offline/error'
             """

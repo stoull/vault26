@@ -18,7 +18,7 @@ struct CreateSensor: AsyncMigration {
             .field("device_id", .int, .required)
             .field("name", .string, .required)
             .field("code", .string, .required)
-            .field("type", .string, .required)
+            .field("type", .int, .required)
             .field("unit", .string)
             .field("mqtt_field", .string)
             .field("precision_val", .int, .required)
@@ -36,6 +36,13 @@ struct CreateSensor: AsyncMigration {
                 "id",
                 onDelete: .cascade,
                 name: "fk_sensor_device_id"
+            )
+            .foreignKey(
+                "type",
+                references: SensorType.schema,
+                "id",
+                onDelete: .restrict,
+                name: "fk_sensor_sensor_type_id"
             )
             .create()
 
@@ -58,7 +65,7 @@ struct CreateSensor: AsyncMigration {
               MODIFY COLUMN `device_id` INT NOT NULL COMMENT '属于哪个设备',
               MODIFY COLUMN `name` VARCHAR(255) NOT NULL COMMENT '显示名（Temperature）',
               MODIFY COLUMN `code` VARCHAR(255) NOT NULL COMMENT '唯一标识（temperature）',
-              MODIFY COLUMN `type` VARCHAR(255) NOT NULL COMMENT '类型（temperature/humidity）',
+              MODIFY COLUMN `type` INT NOT NULL COMMENT '外键 sensor_type.id（传感类型）',
               MODIFY COLUMN `unit` VARCHAR(255) NULL COMMENT '单位（°C/%）'
             """
         ).run()

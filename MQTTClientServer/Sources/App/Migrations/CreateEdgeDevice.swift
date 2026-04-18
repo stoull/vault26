@@ -25,6 +25,13 @@ struct CreateEdgeDevice: AsyncMigration {
             .field("last_seen", .datetime, .required)
             .field("is_active", .int, .required)
             .unique(on: "unique_id")
+            .foreignKey(
+                "device_type",
+                references: DeviceType.schema,
+                "id",
+                onDelete: .restrict,
+                name: "fk_edge_device_device_type_id"
+            )
             .create()
 
         // Fluent schema API 不生成列 COMMENT；用 ALTER 与 SQLAlchemy 的 comment= 对齐（类型与 Fluent MySQL 委托一致）
@@ -32,7 +39,7 @@ struct CreateEdgeDevice: AsyncMigration {
     }
 
     func revert(on database: Database) async throws {
-        try await database.schema(EdgeDeviceMetric.schema).delete()
+        try await database.schema(EdgeDevice.schema).delete()
     }
 
     /// 为带 `comment=` 的列写入 MySQL `COMMENT`（列类型须与 Fluent 已建表一致）
@@ -44,7 +51,7 @@ struct CreateEdgeDevice: AsyncMigration {
         try await sql.raw(
             """
             ALTER TABLE `edge_device`
-              MODIFY COLUMN `device_type` BIGINT NOT NULL COMMENT '设备类型:  1=Pico W, 2=树莓派, 3=ESP32.. .'
+              MODIFY COLUMN `device_type` INT NOT NULL COMMENT '外键 device_type.id（设备类型）'
             """
         ).run()
     }

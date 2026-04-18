@@ -102,25 +102,40 @@ actor MQTTMessageProcessor {
         let createdAtISO =
             (json["created_at"] as? String)
             ?? (json["createdAt"] as? String)
-        
+
+        guard let dbManager = self.dbManager else {
+            logger.warning("No DatabaseManager available: skipping save for topic=\(topic)")
+            return
+        }
+        let db = dbManager.db()
+
+        // 匹配 `location.code`（如 topic 中的 livingroom），写入外键 `location_id`
+        let locationRow: Location?
+        do {
+            locationRow = try await Location.query(on: db).filter(\.$code == locationCode).first()
+        } catch {
+            logger.error("Location lookup failed for locationCode=\(locationCode): \(error)")
+            return
+        }
+        guard let locationRow, let locationId = locationRow.id else {
+            logger.warning("Location not found for locationCode=\(locationCode)")
+            return
+        }
+
         let record = SensorDataTempHumi(
-            locationId: locationCode,
-            sensorType: sensorTypeInt,
+            locationId: locationId,
             sensorId: sensorIdInt,
+            sensorType: sensorTypeInt,
             temperature: temperature,
             humidity: humidity,
             created_at: createdAtISO
         )
 
         do {
-            if let dbManager = self.dbManager {
-                try await dbManager.withRetry(maxAttempts: 3, delay: .seconds(2)) {
-                    try await record.save(on: dbManager.db())
-                }
-                logger.info("Saved SensorDataTempHumi topic=\(topic) sensor_type=\(sensorTypeInt) sensor_id=\(sensorIdInt)")
-            } else {
-                logger.warning("No DatabaseManager available: skipping save for topic=\(topic)")
+            try await dbManager.withRetry(maxAttempts: 3, delay: .seconds(2)) {
+                try await record.save(on: db)
             }
+            logger.info("Saved SensorDataTempHumi topic=\(topic) sensor_type=\(sensorTypeInt) sensor_id=\(sensorIdInt)")
         } catch {
             logger.error("Save failed after retries: \(error)")
         }

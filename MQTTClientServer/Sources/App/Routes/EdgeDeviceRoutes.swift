@@ -71,7 +71,7 @@ struct EdgeDeviceRoutes {
             }
             self.id = id
             self.unique_id = model.uniqueId
-            self.device_type = model.deviceType
+            self.device_type = model.$deviceType.id
             self.device_name = model.deviceName
             self.description = model.deviceDescription
             self.location = model.location
@@ -114,7 +114,7 @@ struct EdgeDeviceRoutes {
 
             let device = EdgeDevice()
             device.uniqueId = body.unique_id.trimmingCharacters(in: .whitespacesAndNewlines)
-            device.deviceType = body.device_type
+            device.$deviceType.id = body.device_type
             device.deviceName = body.device_name
             device.deviceDescription = body.description
             device.location = body.location
@@ -240,7 +240,7 @@ struct EdgeDeviceRoutes {
                     touched = true
                 }
                 if let v = body.device_type {
-                    device.deviceType = v
+                    device.$deviceType.id = v
                     touched = true
                 }
                 if let v = body.device_name {

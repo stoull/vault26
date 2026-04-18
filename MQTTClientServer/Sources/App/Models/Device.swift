@@ -24,9 +24,9 @@ final class Device: Model, @unchecked Sendable {
     @Field(key: "code")
     var code: String
 
-    /// 列名为 `type`
-    @Field(key: "type")
-    var deviceType: String
+    /// 列名为 `type`，外键 → `device_type.id`
+    @Parent(key: "type")
+    var deviceType: DeviceType
 
     @Field(key: "mqtt_topic")
     var mqttTopic: String

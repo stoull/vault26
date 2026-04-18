@@ -18,8 +18,9 @@ final class EdgeDevice: Model, @unchecked Sendable {
     @Field(key: "unique_id")
     var uniqueId: String
 
-    @Field(key: "device_type")
-    var deviceType: Int
+    /// 外键 → `device_type.id`（列名 `device_type`）
+    @Parent(key: "device_type")
+    var deviceType: DeviceType
 
     @OptionalField(key: "device_name")
     var deviceName: String?

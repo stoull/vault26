@@ -1,5 +1,5 @@
 //
-//  DeviceType.swift
+//  SensorType.swift
 //  MQTTClientServer
 //
 //  Created by Hut on 2026/4/18.
@@ -9,9 +9,8 @@ import Foundation
 import Fluent
 
 
-/// 设备类型字典（MQTT 前缀、UI 元数据等），对应表 `device_type`
-final class DeviceType: Model, @unchecked Sendable {
-    static let schema = "device_type"
+final class SensorType: Model, @unchecked Sendable {
+    static let schema = "sensor_type"
 
     @ID(custom: "id", generatedBy: .database)
     var id: Int?

@@ -24,8 +24,9 @@ final class Sensor: Model, @unchecked Sendable {
     @Field(key: "code")
     var code: String
 
-    @Field(key: "type")
-    var sensorType: String
+    /// 列名为 `type`，外键 → `sensor_type.id`
+    @Parent(key: "type")
+    var sensorType: SensorType
 
     @OptionalField(key: "unit")
     var unit: String?
