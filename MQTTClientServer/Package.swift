@@ -42,5 +42,11 @@ let package = Package(
                 .process("Resources"),
             ]
         ),
+        .testTarget(
+            name: "AppTests",
+            dependencies: [
+                .target(name: "App"),
+            ]
+        ),
     ]
 )

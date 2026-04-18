@@ -15,11 +15,14 @@ final class SensorDataTempHumi: Model, @unchecked Sendable {
     @ID(custom: "id", generatedBy: .database)
     var id: Int?
 
-    @OptionalField(key: "sensor_type")
-    var sensorType: Int?
+    @Field(key: "location_id")
+    var locationId: Int
     
     @Field(key: "sensor_id")
     var sensorId: Int
+    
+    @OptionalField(key: "sensor_type")
+    var sensorType: Int?
 
     @OptionalField(key: "temperature")
     var temperature: Double?
@@ -38,10 +41,11 @@ final class SensorDataTempHumi: Model, @unchecked Sendable {
 
     init() {}
 
-    init(sensorType: Int? = nil, sensorId: Int, temperature: Double? = nil,
+    init(locationId: Int, sensorId: Int, sensorType: Int = 0, temperature: Double? = nil,
          humidity: Double? = nil, created_at: String?) {
-        self.sensorType = sensorType
+        self.locationId = locationId
         self.sensorId = sensorId
+        self.sensorType = sensorType
         self.temperature = temperature
         self.humidity = humidity
 

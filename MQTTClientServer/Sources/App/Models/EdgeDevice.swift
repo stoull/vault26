@@ -24,12 +24,12 @@ final class EdgeDevice: Model, @unchecked Sendable {
     @OptionalField(key: "device_name")
     var deviceName: String?
 
+    @OptionalField(key: "location")
+    var location: String?
+
     /// 列名为 SQL 保留字 `description`，Swift 侧避免与 `CustomStringConvertible.description` 冲突
     @OptionalField(key: "description")
     var deviceDescription: String?
-
-    @OptionalField(key: "location")
-    var location: String?
 
     @OptionalField(key: "group_name")
     var groupName: String?

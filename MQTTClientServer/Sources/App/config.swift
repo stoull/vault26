@@ -41,7 +41,7 @@ enum config {
      */
     static let mqttTopics: [String] =
     {
-        let topicsString = "sensor/env/+/+/data,test/updates,sensor/dht22/+/data,device/system/+/device_info,note/+/home"
+        let topicsString = "home/+/+/+/metrics,home/+/env/+/status,home/+/env/+/state,sensor/env/+/+/data,test/updates,sensor/dht22/+/data,device/system/+/device_info,note/+/home"
         return topicsString.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
     }()
     static let mqttEnableTSL = false

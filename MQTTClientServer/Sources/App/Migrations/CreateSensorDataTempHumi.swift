@@ -15,6 +15,7 @@ struct CreateSensorDataTempHumi: AsyncMigration {
     func prepare(on database: Database) async throws {
         try await database.schema(SensorDataTempHumi.schema)
             .field("id",            .int,   .identifier(auto: true))
+            .field("location_id",   .string, .required)
             .field("sensor_type",   .int)
             .field("sensor_id",     .int, .required)
             .field("temperature",   .double)

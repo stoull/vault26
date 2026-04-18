@@ -66,6 +66,8 @@ enum SensorCategory {
     case gas           // 气体：CO2、TVOC、CH4
     case light         // 光照：亮度、紫外线
     case sound         // 声音：分贝、频率
+    case camera
+    case switch
 }
 
 // 建议不同类别使用不同前缀

@@ -16,30 +16,30 @@ actor MQTTMessageProcessor {
         logger.info("RAW MQTT: topic=\(topic) payload=\(payloadString)")
         
         /**
-         RAW MQTT: topic=home/livingroom/env/1/state payload={"temp":27.1,"humi":65.4,"type":"sth30","created_at":"2026-04-18T13:42:52+08:00"}
+        匹配 home/+/env/+/status 模式
+        RAW MQTT: topic=home/livingroom/env/1/state payload={"temp":27.1,"humi":65.4,"type":"sth30","created_at":"2026-04-18T13:42:52+08:00"}
          */
-        // 匹配 home/+/env/+/status 模式
         let pattern = "home/+/env/+/status" // 原为：sensor/env/+/+/data
-        if matchesMQTTPattern(topic: topic, pattern: pattern),
-              let deviceType = extractFromTopic(topic, pattern: pattern, wildcardIndex: 0),
-           let sensorId = extractFromTopic(topic, pattern: pattern, wildcardIndex: 1) {
-            await saveSensorEnvData(topic: topic, payload: payloadString, deviceType: deviceType, sensorId: sensorId)
+        if MQTTTopicPattern.matchesMQTTPattern(topic: topic, pattern: pattern),
+              let locationCode = MQTTTopicPattern.extractFromTopic(topic, pattern: pattern, wildcardIndex: 0),
+           let sensorId = MQTTTopicPattern.extractFromTopic(topic, pattern: pattern, wildcardIndex: 1) {
+            await saveSensorEnvData(topic: topic, payload: payloadString, locationCode: locationCode, sensorId: sensorId)
         }
 
         /**
-         RAW MQTT: home/livingroom/env/1/metrics payload={"unique_id":"ACA704D777EC","platform":"esp32c3","os_version":"v5.5.1-931-g9bb7aa84fe","cpu_frequency_mhz":160,"cpu_temperature":"","total_storage_bytes":4194304,"used_storage_bytes":0,"free_storage_bytes":1318001,"storage_usage_percent":68.57641,"total_memory_bytes":300472,"used_memory_bytes":104508,"free_memory_bytes":195964,"memory_usage_percent":34.78128,"uptime_seconds":67206,"reset_reason":0,"ip":"192.168.1.123","subnet":"255.255.255.0","gateway":"192.168.1.1","dns":"192.168.1.1","rssi":"-56","mac":"AC:A7:04:D7:77:EC","created_at":"2026-04-18T13:47:52+08:00"}
+        匹配 home/+/+/+/metrics，写入 edge_device_metric
+        RAW MQTT: home/livingroom/env/1/metrics payload={"unique_id":"ACA704D777EC","platform":"esp32c3","os_version":"v5.5.1-931-g9bb7aa84fe","cpu_frequency_mhz":160,"cpu_temperature":"","total_storage_bytes":4194304,"used_storage_bytes":0,"free_storage_bytes":1318001,"storage_usage_percent":68.57641,"total_memory_bytes":300472,"used_memory_bytes":104508,"free_memory_bytes":195964,"memory_usage_percent":34.78128,"uptime_seconds":67206,"reset_reason":0,"ip":"192.168.1.123","subnet":"255.255.255.0","gateway":"192.168.1.1","dns":"192.168.1.1","rssi":"-56","mac":"AC:A7:04:D7:77:EC","created_at":"2026-04-18T13:47:52+08:00"}
          */
-        // 匹配 home/+/+/+/metrics，写入 edge_device_metric
         let deviceInfoPattern = "home/+/+/+/metrics"    // 原为：device/system/+/device_info
-        if matchesMQTTPattern(topic: topic, pattern: deviceInfoPattern),
-           let deviceIdStr = extractFromTopic(topic, pattern: deviceInfoPattern, wildcardIndex: 0),
+        if MQTTTopicPattern.matchesMQTTPattern(topic: topic, pattern: deviceInfoPattern),
+           let deviceIdStr = MQTTTopicPattern.extractFromTopic(topic, pattern: deviceInfoPattern, wildcardIndex: 0),
            let deviceId = Int(deviceIdStr) {
             await saveEdgeDeviceMetricData(topic: topic, payload: payloadString, deviceId: deviceId)
         }
     }
     
-    /// 将 `sensor/env/+/+/data` 消息的 JSON 写入 `sensor_data_temp_humi` 表
-    private func saveSensorEnvData(topic: String, payload: String, deviceType: String, sensorId: String) async {
+    /// 将 `home/+/env/+/status` 消息的 JSON 写入 `sensor_data_temp_humi` 表
+    private func saveSensorEnvData(topic: String, payload: String, locationCode: String, sensorId: String) async {
         guard let sensorIdInt = Int(sensorId)
         else {
             logger.warning(
@@ -48,8 +48,18 @@ actor MQTTMessageProcessor {
             return
         }
         
-        var deviceTypeInt = 0
-        switch deviceType.lowercased() {
+        // RAW MQTT: topic=home/livingroom/env/1/state payload={"temp":27.1,"humi":65.4,"type":"sth30","created_at":"2026-04-18T13:42:52+08:00"}
+
+        guard let data = payload.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else {
+            logger.warning("Invalid JSON on topic \(topic)")
+            return
+        }
+        
+        var sensorType = jsonStringNonEmpty(json, key: "type") ?? ""
+        var sensorTypeInt = 0
+        switch sensorType.lowercased() {
             /**
              SHT30 / SHT31 / SHT35（瑞士 Sensirion）
              SHT40 / SHT41 / SHT45（新一代高精度）
@@ -60,38 +70,31 @@ actor MQTTMessageProcessor {
              BME280 / BME680（博世，温湿度 + 气压，BME680 还带气体）
              HTU21D / HTU31D（Measurement Specialties）
              */
-            case "dht11": deviceTypeInt = 1
-            case "dht20": deviceTypeInt = 2
-            case "dht22","am2302": deviceTypeInt = 3
-            case "sht30": deviceTypeInt = 4
-            case "sht31": deviceTypeInt = 5
-            case "sht35": deviceTypeInt = 6
+            case "dht11": sensorTypeInt = 1
+            case "dht20": sensorTypeInt = 2
+            case "dht22","am2302": sensorTypeInt = 3
+            case "sht30": sensorTypeInt = 4
+            case "sht31": sensorTypeInt = 5
+            case "sht35": sensorTypeInt = 6
             
-            case "aht10": deviceTypeInt = 7
-            case "aht20": deviceTypeInt = 8
-            case "aht25": deviceTypeInt = 9
+            case "aht10": sensorTypeInt = 7
+            case "aht20": sensorTypeInt = 8
+            case "aht25": sensorTypeInt = 9
         
             
-            case "sht40": deviceTypeInt = 10
-            case "sht41": deviceTypeInt = 11
-            case "sht45": deviceTypeInt = 12
+            case "sht40": sensorTypeInt = 10
+            case "sht41": sensorTypeInt = 11
+            case "sht45": sensorTypeInt = 12
             
-            case "bme280": deviceTypeInt = 13
-            case "bme680": deviceTypeInt = 14
+            case "bme280": sensorTypeInt = 13
+            case "bme680": sensorTypeInt = 14
             
-            case "htu21d": deviceTypeInt = 15
-            case "htu31d": deviceTypeInt = 16
+            case "htu21d": sensorTypeInt = 15
+            case "htu31d": sensorTypeInt = 16
             default:
                 logger.warning(
-                    "Topic \(topic): unrecognized device_type=\(deviceType), defaulting to 0"
+                    "Topic \(topic): unrecognized sensor_type=\(sensorType), defaulting to 0"
                 )
-        }
-
-        guard let data = payload.data(using: .utf8),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
-        else {
-            logger.warning("Invalid JSON on topic \(topic)")
-            return
         }
 
         let temperature = jsonDouble(json, key: "temperature")
@@ -101,7 +104,8 @@ actor MQTTMessageProcessor {
             ?? (json["createdAt"] as? String)
         
         let record = SensorDataTempHumi(
-            sensorType: deviceTypeInt,
+            locationId: locationCode,
+            sensorType: sensorTypeInt,
             sensorId: sensorIdInt,
             temperature: temperature,
             humidity: humidity,
@@ -113,7 +117,7 @@ actor MQTTMessageProcessor {
                 try await dbManager.withRetry(maxAttempts: 3, delay: .seconds(2)) {
                     try await record.save(on: dbManager.db())
                 }
-                logger.info("Saved SensorDataTempHumi topic=\(topic) sensor_type=\(deviceTypeInt) sensor_id=\(sensorIdInt)")
+                logger.info("Saved SensorDataTempHumi topic=\(topic) sensor_type=\(sensorTypeInt) sensor_id=\(sensorIdInt)")
             } else {
                 logger.warning("No DatabaseManager available: skipping save for topic=\(topic)")
             }
@@ -246,67 +250,4 @@ actor MQTTMessageProcessor {
         return nil
     }
     
-    // MARK: - MQTT Topic Matching Utilities
-    
-    /// 匹配 MQTT 主题模式，支持单层通配符 (+) 和多层通配符 (#)
-    /// - Parameters:
-    ///   - topic: 实际收到的主题，如 "sensor/dht22/1/data"
-    ///   - pattern: 订阅模式，如 "sensor/dht22/+/data"
-    /// - Returns: 是否匹配
-    private func matchesMQTTPattern(topic: String, pattern: String) -> Bool {
-        let topicLevels = topic.split(separator: "/").map(String.init)
-        let patternLevels = pattern.split(separator: "/").map(String.init)
-        
-        // 处理多层通配符 #（只能在最后）
-        if patternLevels.last == "#" {
-            // 模式必须短于或等于主题
-            if patternLevels.count - 1 > topicLevels.count {
-                return false
-            }
-            // 检查 # 之前的所有层级
-            for i in 0..<(patternLevels.count - 1) {
-                if patternLevels[i] != "+" && patternLevels[i] != topicLevels[i] {
-                    return false
-                }
-            }
-            return true
-        }
-        
-        // 不使用 # 时，层级数必须相同
-        guard topicLevels.count == patternLevels.count else {
-            return false
-        }
-        
-        // 逐层匹配
-        for (topicLevel, patternLevel) in zip(topicLevels, patternLevels) {
-            if patternLevel != "+" && patternLevel != topicLevel {
-                return false
-            }
-        }
-        
-        return true
-    }
-    
-    /// 从主题中提取特定位置的值
-    /// 例如: extractFromTopic("sensor/dht22/1/data", pattern: "sensor/dht22/+/data", wildcardIndex: 0) -> "1"
-    private func extractFromTopic(_ topic: String, pattern: String, wildcardIndex: Int) -> String? {
-        let topicLevels = topic.split(separator: "/").map(String.init)
-        let patternLevels = pattern.split(separator: "/").map(String.init)
-        
-        guard topicLevels.count == patternLevels.count else {
-            return nil
-        }
-        
-        var wildcardCount = 0
-        for (index, patternLevel) in patternLevels.enumerated() {
-            if patternLevel == "+" {
-                if wildcardCount == wildcardIndex {
-                    return topicLevels[index]
-                }
-                wildcardCount += 1
-            }
-        }
-        
-        return nil
-    }
 }
