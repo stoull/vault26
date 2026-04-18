@@ -1,4 +1,65 @@
 
+
+## 当前MQTT主题设计
+
+### MQTT主题设计
+
+
+```
+home/livingroom/env/1/state   // 设备状态（在线/离线/故障等）
+home/livingroom/env/1/status(availability)  // 设备状态（在线/离线/故障等）
+home/livingroom/env/1/metrics // 设备指标（可选，视设备功能而定）
+home/livingroom/env/1/command // 设备控制（可选，视设备功能而定）
+home/livingroom/env/1/config  // 设备配置（可选，视设备功能而定）
+home/livingroom/env/1/event   // 设备事件（可选，视设备功能而定）,如果设备有报警功能，可以在这里发布报警事件
+
+home/livingroom/light/1/state
+home/livingroom/sound/2/state
+...
+
+device/system/+/device_info
+home/livingroom/env/1/status
+
+
+// 广播主题（系统级）
+
+home/broadcast/reboot
+home/broadcast/update
+
+
+设备发现（如果对接 Home Assistant）
+homeassistant/sensor/env/1/config
+
+
+```
+
+示例：
+
+温湿度传感器：
+
+```
+RAW MQTT: topic=home/livingroom/env/1/state payload={"temp":27.1,"humi":65.4,"type":"sth30","created_at":"2026-04-18T13:42:52+08:00"}
+RAW MQTT: topic=home/livingroom/env/2/state payload={"temp":27.1,"humi":65.4,"type":"dht22","created_at":"2026-04-18T13:42:52+08:00"}
+RAW MQTT: home/livingroom/env/1/metrics payload={"unique_id":"ACA704D777EC","platform":"esp32c3","os_version":"v5.5.1-931-g9bb7aa84fe","cpu_frequency_mhz":160,"cpu_temperature":"","total_storage_bytes":4194304,"used_storage_bytes":0,"free_storage_bytes":1318001,"storage_usage_percent":68.57641,"total_memory_bytes":300472,"used_memory_bytes":104508,"free_memory_bytes":195964,"memory_usage_percent":34.78128,"uptime_seconds":67206,"reset_reason":0,"ip":"192.168.1.123","subnet":"255.255.255.0","gateway":"192.168.1.1","dns":"192.168.1.1","rssi":"-56","mac":"AC:A7:04:D7:77:EC","created_at":"2026-04-18T13:47:52+08:00"}
+```
+
+| 层级       | 示例               | 说明             |
+| -------- | ---------------- | -------------- |
+| root     | home             | 系统根（可换成公司/项目名） |
+| location | livingroom       | 房间             |
+| device   | env              | 设备名（逻辑设备）      |
+| index    | 1                | 设备编号      |
+| endpoint | sensor           | 功能模块（可选但强烈建议）  |
+| type     | state/status/... | 数据类型           |
+
+### 订阅策略示例
+
+`home/livingroom/+/+/state` : 监听整个房间
+`home/+/+/+/status` : 监听所有设备状态
+`home/#` : 监听全系统（不建议，除非做监控工具）
+
+
+
 enum SensorCategory {
     case environment    // 环境：温度、湿度、气压、空气质量
     case motion        // 运动：加速度、陀螺仪
@@ -21,6 +82,12 @@ data/sensor/dht22/001/humidity
 data/sensor/sht30/002/temperature
 
 传感器数据主题结构建议：
+sensor/env/dht20/+/data
+
+sensor/env/livingroom/dht30
+
+
+
 sensor/env/dht20/+/data
 sensor/env/dht22/+/data
 sensor/env/sht30/+/data

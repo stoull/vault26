@@ -2,7 +2,7 @@
 set -e
 
 IMAGE_NAME="stoull/mqtt_client"
-TAG="0.1"
+TAG="0.2"
 CACHE_DIR="${HOME}/buildx-cache/mqtt_client"
 
 # 确保缓存目录存在
