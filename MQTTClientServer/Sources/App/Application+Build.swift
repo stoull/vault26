@@ -45,6 +45,8 @@ func buildApplication() async throws -> some ApplicationProtocol {
         SeedLocation(),
         CreateDeviceType(),
         SeedDeviceTypes(),
+        CreateEdgeDevice(),
+        SeedEdgeDevices(),
         CreateSensorType(),
         SeedSensorTypes(),
         CreateDevice(),
@@ -52,8 +54,6 @@ func buildApplication() async throws -> some ApplicationProtocol {
         CreateSensor(),
         SeedSensors(),
         CreateSensorDataTempHumi(),
-        CreateEdgeDevice(),
-        SeedEdgeDevices(),
         CreateEdgeDeviceMetric()
         // AddSensorTypeToSensorDataTempHumi()
     ])

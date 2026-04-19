@@ -15,15 +15,23 @@ struct CreateEdgeDevice: AsyncMigration {
         try await database.schema(EdgeDevice.schema)
             .field("id", .int, .identifier(auto: true))
             .field("unique_id", .string, .required)
+            .field("code", .string, .required)
             .field("device_type", .int, .required)
             .field("device_name", .string)
             .field("description", .string)
-            .field("location", .string)
+            .field("location_id", .int, .required)
             .field("group_name", .string)
             .field("created_at", .datetime, .required)
             .field("last_seen", .datetime, .required)
             .field("is_active", .int, .required)
-            .unique(on: "unique_id")
+            .unique(on: "unique_id", "code")
+            .foreignKey(
+                "location_id",
+                references: Location.schema,
+                "id",
+                onDelete: .cascade,
+                name: "fk_edge_device_location_id"
+            )
             .foreignKey(
                 "device_type",
                 references: DeviceType.schema,

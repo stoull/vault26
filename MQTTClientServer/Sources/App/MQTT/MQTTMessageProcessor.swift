@@ -56,46 +56,6 @@ actor MQTTMessageProcessor {
             logger.warning("Invalid JSON on topic \(topic)")
             return
         }
-        
-        var sensorType = jsonStringNonEmpty(json, key: "type") ?? ""
-        var sensorTypeInt = 0
-        switch sensorType.lowercased() {
-            /**
-             SHT30 / SHT31 / SHT35（瑞士 Sensirion）
-             SHT40 / SHT41 / SHT45（新一代高精度）
-             SHTC3（低功耗小体积）
-             AM2302 (DHT22) 单总线，性价比高
-             DHT11 入门级，精度一般
-             AHT10 / AHT20 / AHT25（国产高性价比）
-             BME280 / BME680（博世，温湿度 + 气压，BME680 还带气体）
-             HTU21D / HTU31D（Measurement Specialties）
-             */
-            case "dht11": sensorTypeInt = 1
-            case "dht20": sensorTypeInt = 2
-            case "dht22","am2302": sensorTypeInt = 3
-            case "sht30": sensorTypeInt = 4
-            case "sht31": sensorTypeInt = 5
-            case "sht35": sensorTypeInt = 6
-            
-            case "aht10": sensorTypeInt = 7
-            case "aht20": sensorTypeInt = 8
-            case "aht25": sensorTypeInt = 9
-        
-            
-            case "sht40": sensorTypeInt = 10
-            case "sht41": sensorTypeInt = 11
-            case "sht45": sensorTypeInt = 12
-            
-            case "bme280": sensorTypeInt = 13
-            case "bme680": sensorTypeInt = 14
-            
-            case "htu21d": sensorTypeInt = 15
-            case "htu31d": sensorTypeInt = 16
-            default:
-                logger.warning(
-                    "Topic \(topic): unrecognized sensor_type=\(sensorType), defaulting to 0"
-                )
-        }
 
         let temperature = jsonDouble(json, key: "temperature")
         let humidity = jsonDouble(json, key: "humidity")
@@ -122,10 +82,24 @@ actor MQTTMessageProcessor {
             return
         }
 
+        //  在读取一下 sensor_type 表，获取 sensor_type_id
+        var sensorType = jsonStringNonEmpty(json, key: "type") ?? ""
+        let sensorTypeRow: SensorType?
+        do {
+            sensorTypeRow = try await SensorType.query(on: db).filter(\.$code == sensorType).first()
+        } catch {
+            logger.error("SensorType lookup failed for sensorType=\(sensorType): \(error)")
+            return
+        }
+        guard let sensorTypeRow, let sensorTypeId = sensorTypeRow.id else {
+            logger.warning("SensorType not found for sensorType=\(sensorType)")
+            return
+        }
+
         let record = SensorDataTempHumi(
             locationId: locationId,
             sensorId: sensorIdInt,
-            sensorType: sensorTypeInt,
+            sensorType: sensorTypeId,
             temperature: temperature,
             humidity: humidity,
             created_at: createdAtISO
@@ -135,7 +109,7 @@ actor MQTTMessageProcessor {
             try await dbManager.withRetry(maxAttempts: 3, delay: .seconds(2)) {
                 try await record.save(on: db)
             }
-            logger.info("Saved SensorDataTempHumi topic=\(topic) sensor_type=\(sensorTypeInt) sensor_id=\(sensorIdInt)")
+            logger.info("Saved SensorDataTempHumi topic=\(topic) sensor_type=\(sensorTypeRow.name) sensor_id=\(sensorIdInt)")
         } catch {
             logger.error("Save failed after retries: \(error)")
         }

@@ -21,7 +21,8 @@ struct SeedLocation: AsyncMigration {
     }
 
     private static let rows: [Row] = [
-        Row(code: "home", name: "Home", parentCode: nil, locationType: "home", sortOrder: 0),
+        Row(code: "unassigned", name: "Unassigned", parentCode: nil, locationType: "unassigned", sortOrder: 0),
+        Row(code: "home", name: "Home", parentCode: nil, locationType: "home", sortOrder: 1),
         Row(code: "livingroom", name: "客厅", parentCode: "home", locationType: "room", sortOrder: 1),
         Row(code: "bedroom", name: "卧室", parentCode: "home", locationType: "room", sortOrder: 2),
         Row(code: "kitchen", name: "厨房", parentCode: "home", locationType: "room", sortOrder: 3),
@@ -31,6 +32,27 @@ struct SeedLocation: AsyncMigration {
         Row(code: "office", name: "办公室", parentCode: "home", locationType: "room", sortOrder: 7),
         Row(code: "garage", name: "车库", parentCode: "home", locationType: "room", sortOrder: 8),
         Row(code: "laboratory", name: "实验室", parentCode: "home", locationType: "room", sortOrder: 9),
+
+        Row(code: "fridge", name: "冰箱", parentCode: "livingroom", locationType: "device", sortOrder: 1),
+        Row(code: "fridge_refrigerator", name: "冰箱-冷藏层", parentCode: "fridge", locationType: "device", sortOrder: 1),
+        Row(code: "fridge_freezer", name: "冰箱-冷冻层", parentCode: "fridge", locationType: "device", sortOrder: 1),
+        Row(code: "washing_machine", name: "洗衣机", parentCode: "livingroom", locationType: "device", sortOrder: 1),
+        Row(code: "washing_machine_top", name: "洗衣机-上层", parentCode: "washing_machine", locationType: "device", sortOrder: 1),
+        Row(code: "washing_machine_bottom", name: "洗衣机-下层", parentCode: "washing_machine", locationType: "device", sortOrder: 1),
+        Row(code: "tv", name: "电视", parentCode: "livingroom", locationType: "device", sortOrder: 1),
+        Row(code: "air_conditioner", name: "空调", parentCode: "livingroom", locationType: "device", sortOrder: 1),
+        Row(code: "fan", name: "风扇", parentCode: "livingroom", locationType: "device", sortOrder: 1),
+        Row(code: "curtain", name: "窗帘", parentCode: "livingroom", locationType: "device", sortOrder: 1),
+        Row(code: "door", name: "门", parentCode: "livingroom", locationType: "device", sortOrder: 1),
+        Row(code: "window", name: "窗户", parentCode: "livingroom", locationType: "device", sortOrder: 1),
+        Row(code: "wall", name: "墙", parentCode: "livingroom", locationType: "device", sortOrder: 1),
+
+        Row(code: "outdoor", name: "室外", parentCode: "home", locationType: "home", sortOrder: 9),
+        Row(code: "outdoor_east", name: "室外-东", parentCode: "home", locationType: "home", sortOrder: 9),
+        Row(code: "outdoor_west", name: "室外-西", parentCode: "home", locationType: "home", sortOrder: 9),
+        Row(code: "outdoor_north", name: "室外-北", parentCode: "home", locationType: "home", sortOrder: 9),
+        Row(code: "outdoor_south", name: "室外-南", parentCode: "home", locationType: "home", sortOrder: 9),
+        Row(code: "outdoor_top", name: "室外-顶部", parentCode: "home", locationType: "home", sortOrder: 9),
     ]
 
     /// 子节点先于根删除，避免残留孤儿行

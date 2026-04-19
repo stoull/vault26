@@ -40,10 +40,11 @@ struct SeedEdgeDevices: AsyncMigration {
 
     private struct Row {
         let uniqueId: String
-        let legacyDeviceType: Int
+        let code: String?
+        let deviceTypeCode: String
         let deviceName: String?
         let description: String?
-        let location: String?
+        let locationCode: String
         let groupName: String?
         let createdAt: String
         let lastSeen: String
@@ -53,10 +54,11 @@ struct SeedEdgeDevices: AsyncMigration {
     private static let rows: [Row] = [
         Row(
             uniqueId: "1000000009454311",
-            legacyDeviceType: 2,
+            code: "1000000009454311",
+            deviceTypeCode: "raspberry_pi_4_model_b",
             deviceName: "Raspberry Pi 4 Model B Rev 1.4",
             description: "my first raspberry pi",
-            location: "with me",
+            locationCode: "unassigned",
             groupName: "my devices",
             createdAt: "2026-01-14 06:27:18",
             lastSeen: "2026-01-14 06:27:18",
@@ -64,10 +66,11 @@ struct SeedEdgeDevices: AsyncMigration {
         ),
         Row(
             uniqueId: "e6632c8593745230",
-            legacyDeviceType: 1,
+            code: "1000000009454312",
+            deviceTypeCode: "raspberry_pi_pico_w",
             deviceName: "Raspberry Pi Pico W",
-            description: "温度监控节点",
-            location: "实验室A",
+            description: "unassigned",
+            locationCode: "livingroom",
             groupName: "物联网传感器",
             createdAt: "2026-01-14 06:27:18",
             lastSeen: "2026-01-14 06:27:18",
@@ -75,21 +78,59 @@ struct SeedEdgeDevices: AsyncMigration {
         ),
         Row(
             uniqueId: "D83BDAE410F8",
-            legacyDeviceType: 3,
-            deviceName: "MakerGO ESP32 C3 SuperMini",
+            code: "1000000009454313",
+            deviceTypeCode: "esp32_c3_supermini",
+            deviceName: "ESP32 C3 SuperMini",
             description: "my first esp32",
-            location: "Its mine",
+            locationCode: "livingroom",
             groupName: "my devices",
             createdAt: "2026-01-14 06:27:18",
             lastSeen: "2026-01-14 06:27:18",
             isActive: 1
         ),
         Row(
-            uniqueId: "change_to_unique_id_1",
-            legacyDeviceType: 4,
-            deviceName: "for future use",
-            description: nil,
-            location: nil,
+            uniqueId: "ACA704D777EC",
+            code: "1000000009454314",
+            deviceTypeCode: "esp32_c3_supermini",
+            deviceName: "ESP32 C3 SuperMini",
+            description: "my second esp32",
+            locationCode: "livingroom",
+            groupName: nil,
+            createdAt: "2026-01-14 06:27:18",
+            lastSeen: "2026-01-14 06:27:18",
+            isActive: 1
+        ),
+        Row(
+            uniqueId: "change_to_unique_id_10",
+            code: "1000000009454315",
+            deviceTypeCode: "esp32_c3_supermini",
+            deviceName: "ESP32 C3 SuperMini",
+            description: "my second esp32",
+            locationCode: "unassigned",
+            groupName: nil,
+            createdAt: "2026-01-14 06:27:18",
+            lastSeen: "2026-01-14 06:27:18",
+            isActive: 1
+        ),
+        Row(
+            uniqueId: "change_to_unique_id_11",
+            code: "1000000009454316",
+            deviceTypeCode: "esp32_c3_supermini",
+            deviceName: "ESP32 C3 SuperMini",
+            description: "my second esp32",
+            locationCode: "unassigned",
+            groupName: nil,
+            createdAt: "2026-01-14 06:27:18",
+            lastSeen: "2026-01-14 06:27:18",
+            isActive: 1
+        ),
+        Row(
+            uniqueId: "change_to_unique_id_12",
+            code: "1000000009454317",
+            deviceTypeCode: "esp32_c3_supermini",
+            deviceName: "ESP32 C3 SuperMini",
+            description: "my second esp32",
+            locationCode: "unassigned",
             groupName: nil,
             createdAt: "2026-01-14 06:27:18",
             lastSeen: "2026-01-14 06:27:18",
@@ -97,10 +138,11 @@ struct SeedEdgeDevices: AsyncMigration {
         ),
         Row(
             uniqueId: "change_to_unique_id_2",
-            legacyDeviceType: 6,
-            deviceName: "for future use",
-            description: nil,
-            location: nil,
+            code: "1000000009454318",
+            deviceTypeCode: "nanopi_r2s",
+            deviceName: "NanoPi R2S",
+            description: "my first nanopi",
+            locationCode: "livingroom",
             groupName: nil,
             createdAt: "2026-01-14 06:27:18",
             lastSeen: "2026-01-14 06:27:18",
@@ -108,10 +150,11 @@ struct SeedEdgeDevices: AsyncMigration {
         ),
         Row(
             uniqueId: "change_to_unique_id_3",
-            legacyDeviceType: 7,
+            code: "1000000009454320",
+            deviceTypeCode: "imac_24_inch_m1_2021",
             deviceName: "for future use",
-            description: nil,
-            location: nil,
+            description: "des",
+            locationCode: "livingroom",
             groupName: nil,
             createdAt: "2026-01-14 06:27:18",
             lastSeen: "2026-01-14 06:27:18",
@@ -119,10 +162,11 @@ struct SeedEdgeDevices: AsyncMigration {
         ),
         Row(
             uniqueId: "change_to_unique_id_4",
-            legacyDeviceType: 8,
+            code: "1000000009454319",
+            deviceTypeCode: "24_inch_m2_2023",
             deviceName: "for future use",
-            description: nil,
-            location: nil,
+            description: "des",
+            locationCode: "livingroom",
             groupName: nil,
             createdAt: "2026-01-14 06:27:18",
             lastSeen: "2026-01-14 06:27:18",
@@ -137,19 +181,26 @@ struct SeedEdgeDevices: AsyncMigration {
             if try await EdgeDevice.query(on: database).filter(\.$uniqueId == row.uniqueId).first() != nil {
                 continue
             }
-            let code = Self.legacyDeviceTypeToCode(row.legacyDeviceType)
-            guard let typeRow = try await DeviceType.query(on: database).filter(\.$code == code).first(),
+            // let code = Self.legacyDeviceTypeToCode(row.legacyDeviceType)
+            guard let typeRow = try await DeviceType.query(on: database).filter(\.$code == row.deviceTypeCode).first(),
                   let typeId = typeRow.id
             else {
-                throw SeedEdgeDevicesError.missingDeviceType(code: code)
+                throw SeedEdgeDevicesError.missingDeviceType(code: row.deviceTypeCode)
+            }
+
+            guard let location = try await Location.query(on: database).filter(\.$code == row.locationCode).first(),
+                  let locationId = location.id
+            else {
+                throw SeedEdgeDevicesError.missingLocation(code: row.locationCode)
             }
 
             let device = EdgeDevice()
             device.uniqueId = row.uniqueId
+            device.code = row.code ?? UUID().uuidString
             device.$deviceType.id = typeId
             device.deviceName = row.deviceName
             device.deviceDescription = row.description
-            device.location = row.location
+            device.locationId = locationId
             device.groupName = row.groupName
             device.createdAt = Self.parseStamp(row.createdAt)
             device.lastSeen = Self.parseStamp(row.lastSeen)
@@ -166,11 +217,14 @@ struct SeedEdgeDevices: AsyncMigration {
 
     private enum SeedEdgeDevicesError: Error, CustomStringConvertible {
         case missingDeviceType(code: String)
+        case missingLocation(code: String)
 
         var description: String {
             switch self {
             case .missingDeviceType(let code):
                 return "SeedEdgeDevices: no device_type row with code=\(code); run SeedDeviceTypes first."
+            case .missingLocation(let code):
+                return "SeedEdgeDevices: no location with code=\(code); run SeedLocation first."
             }
         }
     }

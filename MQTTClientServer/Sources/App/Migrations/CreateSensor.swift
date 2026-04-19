@@ -15,7 +15,8 @@ struct CreateSensor: AsyncMigration {
     func prepare(on database: Database) async throws {
         try await database.schema(Sensor.schema)
             .field("id", .int, .identifier(auto: true))
-            .field("device_id", .int, .required)
+            .field("device_id", .int)
+            .field("edge_device_id", .int)
             .field("name", .string, .required)
             .field("code", .string, .required)
             .field("type", .int, .required)
@@ -29,14 +30,8 @@ struct CreateSensor: AsyncMigration {
             .field("description", .string)
             .field("created_at", .datetime)
             .field("updated_at", .datetime)
-            .unique(on: "device_id", "code")
-            .foreignKey(
-                "device_id",
-                references: Device.schema,
-                "id",
-                onDelete: .cascade,
-                name: "fk_sensor_device_id"
-            )
+            .unique(on: "code")
+            
             .foreignKey(
                 "type",
                 references: SensorType.schema,
@@ -59,10 +54,11 @@ struct CreateSensor: AsyncMigration {
             throw CommentMigrationError.sqlDatabaseRequired
         }
 
-        // 勿对 `device_id`、`type` 做 MODIFY：外键列，MySQL 会拒绝。
+        // 勿对 `device_id`、`type` 做 MODIFY：列上已有外键，MySQL 会拒绝（与 CreateDevice 相同）。
         try await sql.raw(
             """
             ALTER TABLE `sensor`
+              MODIFY COLUMN `edge_device_id` INT NULL COMMENT '属于哪个边缘设备',
               MODIFY COLUMN `name` VARCHAR(255) NOT NULL COMMENT '显示名（Temperature）',
               MODIFY COLUMN `code` VARCHAR(255) NOT NULL COMMENT '唯一标识（temperature）',
               MODIFY COLUMN `unit` VARCHAR(255) NULL COMMENT '单位（°C/%）'

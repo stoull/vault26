@@ -40,7 +40,7 @@ final class Location: Model, @unchecked Sendable {
 
     /// 列名为 SQL 保留字 `description`，Swift 侧避免与 `CustomStringConvertible.description` 冲突
     @OptionalField(key: "description")
-    var deviceDescription: String?
+    var locationDescription: String?
 
     @Field(key: "sort_order")
     var sortOrder: Int

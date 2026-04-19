@@ -20,7 +20,7 @@ struct EdgeDeviceRoutes {
         let device_type: Int
         let device_name: String?
         let description: String?
-        let location: String?
+        let locationId: Int?
         let group_name: String?
         let created_at: String?
         let last_seen: String?
@@ -44,7 +44,7 @@ struct EdgeDeviceRoutes {
         let device_type: Int?
         let device_name: String?
         let description: String?
-        let location: String?
+        let locationId: Int?
         let group_name: String?
         let created_at: String?
         let last_seen: String?
@@ -59,7 +59,7 @@ struct EdgeDeviceRoutes {
         let device_type: Int
         let device_name: String?
         let description: String?
-        let location: String?
+        let locationId: Int?
         let group_name: String?
         let created_at: String
         let last_seen: String
@@ -74,7 +74,7 @@ struct EdgeDeviceRoutes {
             self.device_type = model.$deviceType.id
             self.device_name = model.deviceName
             self.description = model.deviceDescription
-            self.location = model.location
+            self.locationId = model.locationId
             self.group_name = model.groupName
             self.created_at = Self.isoString(model.createdAt)
             self.last_seen = Self.isoString(model.lastSeen)
@@ -117,7 +117,7 @@ struct EdgeDeviceRoutes {
             device.$deviceType.id = body.device_type
             device.deviceName = body.device_name
             device.deviceDescription = body.description
-            device.location = body.location
+            device.locationId = body.locationId ?? 0
             device.groupName = body.group_name
             device.createdAt = created
             device.lastSeen = lastSeen
@@ -251,8 +251,8 @@ struct EdgeDeviceRoutes {
                     device.deviceDescription = v
                     touched = true
                 }
-                if let v = body.location {
-                    device.location = v
+                if let v = body.locationId {
+                    device.locationId = v
                     touched = true
                 }
                 if let v = body.group_name {

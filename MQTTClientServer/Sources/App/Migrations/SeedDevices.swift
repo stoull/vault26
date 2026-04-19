@@ -23,42 +23,10 @@ struct SeedDevices: AsyncMigration {
 
     /// 与 MQTT topic `home/<location>/env/<id>/...` 及业务命名对齐的示例设备
     private static let deviceRows: [DeviceRow] = [
-        DeviceRow(
-            locationCode: "livingroom",
-            code: "env_001",
-            name: "客厅环境站",
-            deviceTypeCode: "esp32_c3_supermini",
-            mqttTopic: "home/livingroom/env/001",
-            status: "offline",
-            sortOrder: 0
-        ),
-        DeviceRow(
-            locationCode: "livingroom",
-            code: "gateway_pi",
-            name: "客厅网关（树莓派）",
-            deviceTypeCode: "raspberry_pi_4_model_b",
-            mqttTopic: "home/livingroom/gateway/001",
-            status: "offline",
-            sortOrder: 1
-        ),
-        DeviceRow(
-            locationCode: "home",
-            code: "home_hub",
-            name: "家庭中枢",
-            deviceTypeCode: "nanopi_r2s",
-            mqttTopic: "home/home/hub/001",
-            status: "offline",
-            sortOrder: 0
-        ),
-        DeviceRow(
-            locationCode: "bedroom",
-            code: "env_bed_001",
-            name: "卧室环境站",
-            deviceTypeCode: "raspberry_pi_pico_w",
-            mqttTopic: "home/bedroom/env/001",
-            status: "offline",
-            sortOrder: 0
-        ),
+        DeviceRow(locationCode: "livingroom", code: "env_001", name: "客厅环境站", deviceTypeCode: "esp32_c3_supermini", mqttTopic: "home/livingroom/env/001", status: "offline", sortOrder: 0),
+        DeviceRow(locationCode: "livingroom", code: "gateway_pi", name: "客厅网关（树莓派）", deviceTypeCode: "raspberry_pi_4_model_b", mqttTopic: "home/livingroom/gateway/001", status: "offline", sortOrder: 1),
+        DeviceRow(locationCode: "home", code: "home_hub", name: "家庭中枢", deviceTypeCode: "nanopi_r2s", mqttTopic: "home/home/hub/001", status: "offline", sortOrder: 0),
+        DeviceRow(locationCode: "bedroom", code: "env_bed_001", name: "卧室环境站", deviceTypeCode: "raspberry_pi_pico_w", mqttTopic: "home/bedroom/env/001", status: "offline", sortOrder: 0),
     ]
 
     private static var seededDeviceCodes: [String] { deviceRows.map(\.code) }

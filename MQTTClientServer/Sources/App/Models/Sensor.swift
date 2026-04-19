@@ -15,9 +15,6 @@ final class Sensor: Model, @unchecked Sendable {
     @ID(custom: "id", generatedBy: .database)
     var id: Int?
 
-    @Field(key: "device_id")
-    var deviceId: Int
-
     @Field(key: "name")
     var name: String
 
@@ -27,6 +24,13 @@ final class Sensor: Model, @unchecked Sendable {
     /// 列名为 `type`，外键 → `sensor_type.id`
     @Parent(key: "type")
     var sensorType: SensorType
+
+    // 这里需要表示当这个传感器是哪个设备下的
+    @OptionalField(key: "device_id")
+    var deviceId: Int?
+
+    @OptionalField(key: "edge_device_id")
+    var edgeDeviceId: Int?
 
     @OptionalField(key: "unit")
     var unit: String?
@@ -51,7 +55,7 @@ final class Sensor: Model, @unchecked Sendable {
 
     /// 列名为 SQL 保留字 `description`
     @OptionalField(key: "description")
-    var deviceDescription: String?
+    var sensorDescription: String?
 
     @OptionalField(key: "created_at")
     var createdAt: Date?

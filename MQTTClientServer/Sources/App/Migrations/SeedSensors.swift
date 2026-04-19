@@ -12,7 +12,6 @@ struct SeedSensors: AsyncMigration {
     var name: String { "SeedSensors" }
 
     private struct SensorRow {
-        let deviceCode: String
         let code: String
         let name: String
         let sensorTypeCode: String
@@ -20,62 +19,41 @@ struct SeedSensors: AsyncMigration {
         let mqttField: String?
         let precisionVal: Int
         let sortOrder: Int
+        let deviceCode: String?  // 所属设备 这个传感器可能不属于任何设备
+        let edgeDeviceId: Int?   // 所属边缘设备 这个传感器可能不属于任何边缘设备
     }
 
     /// 与 `home/.../env/<sensor 段>/...` 中常用数字段及 JSON `type` 对齐
     private static let sensorRows: [SensorRow] = [
-        SensorRow(
-            deviceCode: "env_001",
-            code: "1",
-            name: "客厅环境 1 号位",
-            sensorTypeCode: "sht30",
-            unit: "°C / %",
-            mqttField: "temp",
-            precisionVal: 2,
-            sortOrder: 0
-        ),
-        SensorRow(
-            deviceCode: "env_001",
-            code: "2",
-            name: "客厅环境 2 号位",
-            sensorTypeCode: "sht30",
-            unit: "°C / %",
-            mqttField: "temp",
-            precisionVal: 2,
-            sortOrder: 1
-        ),
-        SensorRow(
-            deviceCode: "gateway_pi",
-            code: "1",
-            name: "网关机载 BME280",
-            sensorTypeCode: "bme280",
-            unit: "°C / % / hPa",
-            mqttField: nil,
-            precisionVal: 2,
-            sortOrder: 0
-        ),
-        SensorRow(
-            deviceCode: "env_bed_001",
-            code: "1",
-            name: "卧室环境 1 号位",
-            sensorTypeCode: "aht20",
-            unit: "°C / %",
-            mqttField: nil,
-            precisionVal: 2,
-            sortOrder: 0
-        ),
+        SensorRow(code: "dht22_1", name: "客厅环境 1 号位", sensorTypeCode: "dht22", unit: "°C/%", mqttField: "temp", precisionVal: 2, sortOrder: 0, deviceCode: nil, edgeDeviceId: 4),
+        SensorRow(code: "dht22_2", name: "客厅环境 2 号位", sensorTypeCode: "dht22", unit: "°C/%", mqttField: "temp", precisionVal: 2, sortOrder: 0, deviceCode: nil, edgeDeviceId: 3),
+        SensorRow(code: "dht22_3", name: "客厅环境 3 号位", sensorTypeCode: "dht22", unit: "°C/%", mqttField: "temp", precisionVal: 2, sortOrder: 0, deviceCode: nil, edgeDeviceId: 0),
+        SensorRow(code: "dht22_4", name: "客厅环境 4 号位", sensorTypeCode: "dht22", unit: "°C/%", mqttField: "temp", precisionVal: 2, sortOrder: 0, deviceCode: nil, edgeDeviceId: 0),
+        SensorRow(code: "dht22_5", name: "客厅环境 5 号位", sensorTypeCode: "dht22", unit: "°C/%", mqttField: "temp", precisionVal: 2, sortOrder: 0, deviceCode: nil, edgeDeviceId: 0),
+        SensorRow(code: "dht22_6", name: "客厅环境 6 号位", sensorTypeCode: "dht22", unit: "°C/%", mqttField: "temp", precisionVal: 2, sortOrder: 0, deviceCode: nil, edgeDeviceId: 0),
+        SensorRow(code: "sht30_1", name: "客厅环境 7 号位", sensorTypeCode: "sht30", unit: "°C/%", mqttField: "temp", precisionVal: 2, sortOrder: 0, deviceCode: nil, edgeDeviceId: 4),
+        SensorRow(code: "sht30_2", name: "客厅环境 8 号位", sensorTypeCode: "sht30", unit: "°C / %", mqttField: "temp", precisionVal: 2, sortOrder: 1, deviceCode: nil, edgeDeviceId: 3),
+        SensorRow(code: "sht30_3", name: "客厅环境 9 号位", sensorTypeCode: "sht30", unit: "°C/%", mqttField: "temp", precisionVal: 2, sortOrder: 0, deviceCode: nil, edgeDeviceId: 0),
+        SensorRow(code: "sht30_4", name: "客厅环境 10 号位", sensorTypeCode: "sht30", unit: "°C / %", mqttField: "temp", precisionVal: 2, sortOrder: 1, deviceCode: nil, edgeDeviceId: 0),
+        SensorRow(code: "sht30_5", name: "客厅环境 11 号位", sensorTypeCode: "sht30", unit: "°C/%", mqttField: "temp", precisionVal: 2, sortOrder: 0, deviceCode: nil, edgeDeviceId: 0),
+        SensorRow(code: "sht30_6", name: "客厅环境 12 号位", sensorTypeCode: "sht30", unit: "°C / %", mqttField: "temp", precisionVal: 2, sortOrder: 1, deviceCode: nil,edgeDeviceId: 0)
     ]
 
-    private static var seededKeys: [(device: String, sensor: String)] {
-        sensorRows.map { ($0.deviceCode, $0.code) }
+    private static var seededKeys: [(edgeDeviceId: Int?, sensor: String)] {
+        sensorRows.map { ($0.edgeDeviceId, $0.code) }
     }
 
     func prepare(on database: Database) async throws {
         for row in Self.sensorRows {
-            guard let dev = try await Device.query(on: database).filter(\.$code == row.deviceCode).first(),
-                  let deviceId = dev.id
-            else {
-                throw SeedSensorsError.missingDevice(code: row.deviceCode)
+            var deviceId = 0
+            if let deviceCode = row.deviceCode, 
+                let dev = try await Device.query(on: database).filter(\.$code == deviceCode).first() {
+                deviceId = dev.id!
+            }
+            var eDevId = 0
+            if let edgeDeviceId = row.edgeDeviceId,
+                let edev = try await EdgeDevice.query(on: database).filter(\.$id == edgeDeviceId).first() {
+                eDevId = edev.id!
             }
             if try await Sensor.query(on: database)
                 .filter(\.$deviceId == deviceId)
@@ -100,17 +78,19 @@ struct SeedSensors: AsyncMigration {
             s.precisionVal = row.precisionVal
             s.sortOrder = row.sortOrder
             s.isActive = true
+            s.edgeDeviceId = eDevId
+            s.deviceId = deviceId
             try await s.save(on: database)
         }
     }
 
     func revert(on database: Database) async throws {
         for key in Self.seededKeys {
-            guard let dev = try await Device.query(on: database).filter(\.$code == key.device).first(),
-                  let deviceId = dev.id
+            guard let dev = try await EdgeDevice.query(on: database).filter(\.$id == key.edgeDeviceId ?? 0).first(),
+                  let edgeDeviceId = dev.id
             else { continue }
             try await Sensor.query(on: database)
-                .filter(\.$deviceId == deviceId)
+                .filter(\.$edgeDeviceId == edgeDeviceId)
                 .filter(\.$code == key.sensor)
                 .delete()
         }
