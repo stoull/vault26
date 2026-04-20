@@ -36,6 +36,7 @@ actor MQTTService {
         // 订阅主题
         do {
             try await clientService.subscribe(to: config.mqttTopics)
+            self.logger.info("MQTT service subscribed topics: \(config.mqttTopics)")
         } catch {
             logger.error("Failed to subscribe MQTT topic: \(config.mqttTopics) error: \(error)")
             throw error
@@ -50,6 +51,7 @@ actor MQTTService {
                                                                  length: message.payload.readableBytes,
                                                                  encoding: .utf8) {
                     await self.processor.process(topic: topic, payloadString: payloadString)
+                    self.logger.info("MQTT listening on topics: \(config.MQTT_HOST):\(config.MQTT_PORT)")
                 } else {
                     self.logger.warning("Failed to decode payload for topic: \(topic)")
                 }

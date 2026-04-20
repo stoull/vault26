@@ -17,7 +17,7 @@ actor MQTTMessageProcessor {
         
         /**
         匹配 home/+/env/+/status 模式
-        RAW MQTT: topic=home/livingroom/env/1/state payload={"temp":27.1,"humi":65.4,"type":"sth30","created_at":"2026-04-18T13:42:52+08:00"}
+        RAW MQTT: topic=home/livingroom/env/ACA704D777EC/state payload={"temp":27.1,"humi":65.4,"type":"sth30","created_at":"2026-04-18T13:42:52+08:00"}
          */
         let pattern = "home/+/env/+/state" // 原为：sensor/env/+/+/data
         if MQTTTopicPattern.matchesMQTTPattern(topic: topic, pattern: pattern),
@@ -28,6 +28,8 @@ actor MQTTMessageProcessor {
 
         /**
         匹配 home/+/+/+/metrics，写入 edge_device_metric
+         
+
         RAW MQTT: home/livingroom/env/4/metrics payload={"unique_id":"ACA704D777EC","platform":"esp32c3","os_version":"v5.5.1-931-g9bb7aa84fe","cpu_frequency_mhz":160,"cpu_temperature":"","total_storage_bytes":4194304,"used_storage_bytes":0,"free_storage_bytes":1318001,"storage_usage_percent":68.57641,"total_memory_bytes":300472,"used_memory_bytes":104508,"free_memory_bytes":195964,"memory_usage_percent":34.78128,"uptime_seconds":67206,"reset_reason":0,"ip":"192.168.1.123","subnet":"255.255.255.0","gateway":"192.168.1.1","dns":"192.168.1.1","rssi":"-56","mac":"AC:A7:04:D7:77:EC","created_at":"2026-04-18T13:47:52+08:00"}
          */
         let deviceInfoPattern = "home/+/+/+/metrics"    // 原为：device/system/+/device_info

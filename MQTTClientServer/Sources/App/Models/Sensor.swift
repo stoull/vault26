@@ -8,7 +8,7 @@
 import Foundation
 import Fluent
 
-/// 隶属于 `device` 的传感点/通道，对应表 `sensor`
+/// 传感点/通道，可选关联 `edge_device`，对应表 `sensor`
 final class Sensor: Model, @unchecked Sendable {
     static let schema = "sensor"
 
@@ -24,10 +24,6 @@ final class Sensor: Model, @unchecked Sendable {
     /// 列名为 `type`，外键 → `sensor_type.id`
     @Parent(key: "type")
     var sensorType: SensorType
-
-    // 这里需要表示当这个传感器是哪个设备下的
-    @OptionalField(key: "device_id")
-    var deviceId: Int?
 
     @OptionalField(key: "edge_device_id")
     var edgeDeviceId: Int?

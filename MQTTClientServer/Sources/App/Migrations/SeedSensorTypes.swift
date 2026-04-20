@@ -30,7 +30,13 @@ struct SeedSensorTypes: AsyncMigration {
         ("BME680", "bme680", "env", "温湿压 + 气体"),
         ("HTU21D", "htu21d", "env", "TE Connectivity"),
         ("HTU31D", "htu31d", "env", nil),
-        ("SHT30 (payload typo)", "sth30", "env", "兼容 JSON 中误写的 sth30"),
+        
+        ("HC-SR501", "hc_sr501", "human", "微型人体红外感应模块PIR,2~5米，角度小于120°"),
+        
+        ("Raspberry Pi Camera Module 3", "raspberry_pi_camera_module3_official", "camera", "The classic compact camera for Raspberry Pi with a 12MP sensor and autofocus"),
+        ("Raspberry Pi Camera Module 3 未知品牌", "raspberry_pi_camera_module3_unknown_brand", "camera", "树莓派4代b 2代 3代B 摄像头 500W万 CSI视频接口 支持3代b+/4代B"),
+        
+        
     ]
 
     private static var seededCodes: [String] { rows.map(\.code) }

@@ -13,7 +13,7 @@ struct SeedDeviceTypes: AsyncMigration {
 
     private static let rows: [(name: String, code: String, mqttPrefix: String, description: String?)] = [
         ("iMac, 24-inch, M1, 2021", "imac_24_inch_m1_2021", "system", "iMac, 24 英寸, M1, 2021年款 Mac"),
-        ("Mac mini, 2023", "24_inch_m2_2023", "system", "24 英寸, M2, 2023年款 Mac"),
+        ("Mac mini, 2023", "mac_mini_m2_2023", "system", "24 英寸, M2, 2023年款 Mac"),
         ("Raspberry Pi 4 Model B", "raspberry_pi_4_model_b", "system", "树莓派 4 型号 B"),
         ("Raspberry Pi Pico W", "raspberry_pi_pico_w", "system", "树莓派 Pico W"),
         ("ESP32 C3 SuperMini", "esp32_c3_supermini", "system", "ESP32 C3 SuperMini"),
@@ -30,6 +30,7 @@ struct SeedDeviceTypes: AsyncMigration {
             }
             let model = DeviceType()
             model.name = row.name
+            // 写清楚，能表示机型的字符放前面
             model.code = row.code
             model.mqttPrefix = row.mqttPrefix
             model.deviceDescription = row.description

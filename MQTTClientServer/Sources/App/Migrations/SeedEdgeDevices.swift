@@ -3,7 +3,6 @@
 //  MQTTClientServer
 //
 //  向 `edge_device` 写入与历史示例一致的数据；依赖 `CreateEdgeDevice`、`SeedDeviceTypes`。
-//  旧列 `device_type` 整型语义 → `device_type.code`，见 `legacyDeviceTypeToCode`。
 //
 
 import Foundation
@@ -11,20 +10,6 @@ import Fluent
 
 struct SeedEdgeDevices: AsyncMigration {
     var name: String { "SeedEdgeDevices" }
-
-    /// 旧 `edge_device.device_type` 数值 → `SeedDeviceTypes` 中的 `device_type.code`
-    private static func legacyDeviceTypeToCode(_ legacy: Int) -> String {
-        switch legacy {
-        case 1: return "raspberry_pi_pico_w"
-        case 2: return "raspberry_pi_4_model_b"
-        case 3: return "esp32_c3_supermini"
-        case 4: return "nanopi_r2"
-        case 6: return "nanopi_r2s"
-        case 7: return "imac_24_inch_m1_2021"
-        case 8: return "24_inch_m2_2023"
-        default: return "raspberry_pi_pico_w"
-        }
-    }
 
     private static let timestampFormat: DateFormatter = {
         let f = DateFormatter()
@@ -40,12 +25,14 @@ struct SeedEdgeDevices: AsyncMigration {
 
     private struct Row {
         let uniqueId: String
-        let code: String?
         let deviceTypeCode: String
         let deviceName: String?
         let description: String?
         let locationCode: String
         let groupName: String?
+        let mqttTopic: String
+        let status: String
+        let sortOrder: Int
         let createdAt: String
         let lastSeen: String
         let isActive: Int
@@ -54,124 +41,130 @@ struct SeedEdgeDevices: AsyncMigration {
     private static let rows: [Row] = [
         Row(
             uniqueId: "1000000009454311",
-            code: "1000000009454311",
             deviceTypeCode: "raspberry_pi_4_model_b",
-            deviceName: "Raspberry Pi 4 Model B Rev 1.4",
+            deviceName: "全能家庭（树莓派）",
             description: "my first raspberry pi",
             locationCode: "unassigned",
             groupName: "my devices",
+            mqttTopic: "-",
+            status: "offline",
+            sortOrder: 0,
             createdAt: "2026-01-14 06:27:18",
             lastSeen: "2026-01-14 06:27:18",
             isActive: 1
         ),
         Row(
             uniqueId: "e6632c8593745230",
-            code: "1000000009454312",
             deviceTypeCode: "raspberry_pi_pico_w",
-            deviceName: "Raspberry Pi Pico W",
+            deviceName: "全能设控助手",
             description: "unassigned",
             locationCode: "livingroom",
             groupName: "物联网传感器",
+            mqttTopic: "-",
+            status: "offline",
+            sortOrder: 0,
             createdAt: "2026-01-14 06:27:18",
             lastSeen: "2026-01-14 06:27:18",
             isActive: 1
         ),
         Row(
             uniqueId: "D83BDAE410F8",
-            code: "1000000009454313",
             deviceTypeCode: "esp32_c3_supermini",
-            deviceName: "ESP32 C3 SuperMini",
+            deviceName: "家庭环境监视",
             description: "my first esp32",
             locationCode: "livingroom",
             groupName: "my devices",
+            mqttTopic: "-",
+            status: "offline",
+            sortOrder: 0,
             createdAt: "2026-01-14 06:27:18",
             lastSeen: "2026-01-14 06:27:18",
             isActive: 1
         ),
         Row(
             uniqueId: "ACA704D777EC",
-            code: "1000000009454314",
             deviceTypeCode: "esp32_c3_supermini",
             deviceName: "ESP32 C3 SuperMini",
             description: "my second esp32",
             locationCode: "livingroom",
             groupName: nil,
+            mqttTopic: "-",
+            status: "offline",
+            sortOrder: 0,
             createdAt: "2026-01-14 06:27:18",
             lastSeen: "2026-01-14 06:27:18",
             isActive: 1
         ),
         Row(
             uniqueId: "change_to_unique_id_10",
-            code: "1000000009454315",
             deviceTypeCode: "esp32_c3_supermini",
             deviceName: "ESP32 C3 SuperMini",
             description: "my second esp32",
             locationCode: "unassigned",
             groupName: nil,
+            mqttTopic: "-",
+            status: "offline",
+            sortOrder: 0,
             createdAt: "2026-01-14 06:27:18",
             lastSeen: "2026-01-14 06:27:18",
             isActive: 1
         ),
         Row(
             uniqueId: "change_to_unique_id_11",
-            code: "1000000009454316",
             deviceTypeCode: "esp32_c3_supermini",
             deviceName: "ESP32 C3 SuperMini",
             description: "my second esp32",
             locationCode: "unassigned",
             groupName: nil,
+            mqttTopic: "-",
+            status: "offline",
+            sortOrder: 0,
             createdAt: "2026-01-14 06:27:18",
             lastSeen: "2026-01-14 06:27:18",
             isActive: 1
         ),
         Row(
             uniqueId: "change_to_unique_id_12",
-            code: "1000000009454317",
             deviceTypeCode: "esp32_c3_supermini",
             deviceName: "ESP32 C3 SuperMini",
             description: "my second esp32",
             locationCode: "unassigned",
             groupName: nil,
+            mqttTopic: "-",
+            status: "offline",
+            sortOrder: 0,
             createdAt: "2026-01-14 06:27:18",
             lastSeen: "2026-01-14 06:27:18",
             isActive: 1
         ),
         Row(
             uniqueId: "change_to_unique_id_2",
-            code: "1000000009454318",
             deviceTypeCode: "nanopi_r2s",
-            deviceName: "NanoPi R2S",
+            deviceName: "全能家庭网关",
             description: "my first nanopi",
             locationCode: "livingroom",
             groupName: nil,
+            mqttTopic: "-",
+            status: "offline",
+            sortOrder: 0,
             createdAt: "2026-01-14 06:27:18",
             lastSeen: "2026-01-14 06:27:18",
             isActive: 1
         ),
         Row(
             uniqueId: "change_to_unique_id_3",
-            code: "1000000009454320",
             deviceTypeCode: "imac_24_inch_m1_2021",
             deviceName: "for future use",
             description: "des",
             locationCode: "livingroom",
             groupName: nil,
+            mqttTopic: "-",
+            status: "offline",
+            sortOrder: 0,
             createdAt: "2026-01-14 06:27:18",
             lastSeen: "2026-01-14 06:27:18",
             isActive: 1
-        ),
-        Row(
-            uniqueId: "change_to_unique_id_4",
-            code: "1000000009454319",
-            deviceTypeCode: "24_inch_m2_2023",
-            deviceName: "for future use",
-            description: "des",
-            locationCode: "livingroom",
-            groupName: nil,
-            createdAt: "2026-01-14 06:27:18",
-            lastSeen: "2026-01-14 06:27:18",
-            isActive: 1
-        ),
+        )
     ]
 
     private static var seededUniqueIds: [String] { rows.map(\.uniqueId) }
@@ -181,7 +174,6 @@ struct SeedEdgeDevices: AsyncMigration {
             if try await EdgeDevice.query(on: database).filter(\.$uniqueId == row.uniqueId).first() != nil {
                 continue
             }
-            // let code = Self.legacyDeviceTypeToCode(row.legacyDeviceType)
             guard let typeRow = try await DeviceType.query(on: database).filter(\.$code == row.deviceTypeCode).first(),
                   let typeId = typeRow.id
             else {
@@ -196,17 +188,36 @@ struct SeedEdgeDevices: AsyncMigration {
 
             let device = EdgeDevice()
             device.uniqueId = row.uniqueId
-            device.code = row.code ?? UUID().uuidString
+            device.code = generateMqttCode(deviceType: row.deviceTypeCode, uniqueId: row.uniqueId)
             device.$deviceType.id = typeId
             device.deviceName = row.deviceName
             device.deviceDescription = row.description
             device.locationId = locationId
             device.groupName = row.groupName
+            device.mqttTopic = row.mqttTopic
+            device.status = row.status
             device.createdAt = Self.parseStamp(row.createdAt)
             device.lastSeen = Self.parseStamp(row.lastSeen)
             device.isActive = row.isActive
+            device.sortOrder = row.sortOrder
             try await device.save(on: database)
         }
+    }
+    
+    /**
+     逻辑：取设备类型前缀 + 物理ID的后4位 (类似 MAC 地址缩短版)
+     结果示例：
+     ESP32 C3 -> "ESP_E410F8"
+     Raspberry -> "RAS_454311"
+     */
+    func generateMqttCode(deviceType: String, uniqueId: String) -> String {
+        let prefix = deviceType.uppercased().prefix(3) // 例如 "ESP"
+        
+        // 取 uniqueId 的后 6 位，保证唯一性且够短
+        // 假设 uniqueId 是 "D83DFAE410F8" -> 取 "E410F8"
+        let suffix = uniqueId.suffix(6).uppercased()
+        
+        return "\(prefix)_\(suffix)"
     }
 
     func revert(on database: Database) async throws {

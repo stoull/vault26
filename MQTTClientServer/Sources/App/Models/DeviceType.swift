@@ -19,6 +19,7 @@ final class DeviceType: Model, @unchecked Sendable {
     @Field(key: "name")
     var name: String
 
+    // 写清楚，能表示机型的字符放前面，形式如：esp32_c3_supermini 放前面：esp32
     @Field(key: "code")
     var code: String
 

@@ -21,9 +21,17 @@ struct CreateEdgeDevice: AsyncMigration {
             .field("description", .string)
             .field("location_id", .int, .required)
             .field("group_name", .string)
+            .field("mqtt_topic", .string, .required)
+            .field("status", .string, .required)
+            .field("firmware_version", .string)
+            .field("hardware_version", .string)
             .field("created_at", .datetime, .required)
             .field("last_seen", .datetime, .required)
+            .field("updated_at", .datetime)
+            .field("ip_address", .string)
+            .field("mac_address", .string)
             .field("is_active", .int, .required)
+            .field("sort_order", .int, .required)
             .unique(on: "unique_id", "code")
             .foreignKey(
                 "location_id",

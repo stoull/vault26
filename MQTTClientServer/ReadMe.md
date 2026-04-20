@@ -15,7 +15,14 @@ home/livingroom/env/1/event   // 设备事件（可选，视设备功能而定�
 
 home/livingroom/light/1/state
 home/livingroom/sound/2/state
+
+
+home/livingroom/edge_device/1/status
+home/livingroom/device/1/status
+home/livingroom/env/1/status
 ...
+
+
 
 device/system/+/device_info
 home/livingroom/env/1/status

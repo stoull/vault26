@@ -2,7 +2,7 @@
 //  SeedSensors.swift
 //  MQTTClientServer
 //
-//  幂等写入若干 `sensor`（按所属 `device.code` 与 `sensor_type.code` 解析）；依赖 `CreateSensor`、`SeedSensorTypes`、`SeedDevices`。
+//  幂等写入若干 `sensor`（按 `edge_device_id` 与 `sensor_type.code` 解析）；依赖 `CreateSensor`、`SeedSensorTypes`、`SeedEdgeDevices`。
 //
 
 import Foundation
@@ -10,6 +10,20 @@ import Fluent
 
 struct SeedSensors: AsyncMigration {
     var name: String { "SeedSensors" }
+
+    private static let timestampFormat: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.timeZone = TimeZone(secondsFromGMT: 0)
+        f.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        return f
+    }()
+
+    /// `nil`、空串或无法解析时返回 `nil`
+    private static func parseStamp(_ s: String?) -> Date? {
+        guard let s = s?.trimmingCharacters(in: .whitespacesAndNewlines), !s.isEmpty else { return nil }
+        return timestampFormat.date(from: s)
+    }
 
     private struct SensorRow {
         let code: String
@@ -19,49 +33,45 @@ struct SeedSensors: AsyncMigration {
         let mqttField: String?
         let precisionVal: Int
         let sortOrder: Int
-        let deviceCode: String?  // 所属设备 这个传感器可能不属于任何设备
-        let edgeDeviceId: Int?   // 所属边缘设备 这个传感器可能不属于任何边缘设备
+        let edgeDeviceId: Int?
+        let description: String?
+        let createdAt: String?
+        let updatedAt: String?
+        let isActive: Bool
     }
 
     /// 与 `home/.../env/<sensor 段>/...` 中常用数字段及 JSON `type` 对齐
     private static let sensorRows: [SensorRow] = [
-        SensorRow(code: "dht22_1", name: "客厅环境 1 号位", sensorTypeCode: "dht22", unit: "°C/%", mqttField: "temp", precisionVal: 2, sortOrder: 0, deviceCode: nil, edgeDeviceId: 4),
-        SensorRow(code: "dht22_2", name: "客厅环境 2 号位", sensorTypeCode: "dht22", unit: "°C/%", mqttField: "temp", precisionVal: 2, sortOrder: 0, deviceCode: nil, edgeDeviceId: 3),
-        SensorRow(code: "dht22_3", name: "客厅环境 3 号位", sensorTypeCode: "dht22", unit: "°C/%", mqttField: "temp", precisionVal: 2, sortOrder: 0, deviceCode: nil, edgeDeviceId: 0),
-        SensorRow(code: "dht22_4", name: "客厅环境 4 号位", sensorTypeCode: "dht22", unit: "°C/%", mqttField: "temp", precisionVal: 2, sortOrder: 0, deviceCode: nil, edgeDeviceId: 0),
-        SensorRow(code: "dht22_5", name: "客厅环境 5 号位", sensorTypeCode: "dht22", unit: "°C/%", mqttField: "temp", precisionVal: 2, sortOrder: 0, deviceCode: nil, edgeDeviceId: 0),
-        SensorRow(code: "dht22_6", name: "客厅环境 6 号位", sensorTypeCode: "dht22", unit: "°C/%", mqttField: "temp", precisionVal: 2, sortOrder: 0, deviceCode: nil, edgeDeviceId: 0),
-        SensorRow(code: "sht30_1", name: "客厅环境 7 号位", sensorTypeCode: "sht30", unit: "°C/%", mqttField: "temp", precisionVal: 2, sortOrder: 0, deviceCode: nil, edgeDeviceId: 4),
-        SensorRow(code: "sht30_2", name: "客厅环境 8 号位", sensorTypeCode: "sht30", unit: "°C / %", mqttField: "temp", precisionVal: 2, sortOrder: 1, deviceCode: nil, edgeDeviceId: 3),
-        SensorRow(code: "sht30_3", name: "客厅环境 9 号位", sensorTypeCode: "sht30", unit: "°C/%", mqttField: "temp", precisionVal: 2, sortOrder: 0, deviceCode: nil, edgeDeviceId: 0),
-        SensorRow(code: "sht30_4", name: "客厅环境 10 号位", sensorTypeCode: "sht30", unit: "°C / %", mqttField: "temp", precisionVal: 2, sortOrder: 1, deviceCode: nil, edgeDeviceId: 0),
-        SensorRow(code: "sht30_5", name: "客厅环境 11 号位", sensorTypeCode: "sht30", unit: "°C/%", mqttField: "temp", precisionVal: 2, sortOrder: 0, deviceCode: nil, edgeDeviceId: 0),
-        SensorRow(code: "sht30_6", name: "客厅环境 12 号位", sensorTypeCode: "sht30", unit: "°C / %", mqttField: "temp", precisionVal: 2, sortOrder: 1, deviceCode: nil,edgeDeviceId: 0)
+        SensorRow(code: "dht22_1", name: "客厅环境-已损坏", sensorTypeCode: "dht22", unit: "°C/%", mqttField: "temp", precisionVal: 2, sortOrder: 0, edgeDeviceId: 4, description: "已损坏", createdAt: "2024-08-20 06:27:18", updatedAt: "2025-08-20 06:27:18", isActive: false),
+        SensorRow(code: "dht22_2", name: "客厅环境 1 号位", sensorTypeCode: "dht22", unit: "°C/%", mqttField: "temp", precisionVal: 2, sortOrder: 0, edgeDeviceId: 3, description: "使用中", createdAt: "2024-10-10 10:27:18", updatedAt: nil, isActive: true),
+        SensorRow(code: "dht22_3", name: "实验用 1", sensorTypeCode: "dht22", unit: "°C/%", mqttField: "temp", precisionVal: 2, sortOrder: 0, edgeDeviceId: nil, description: "检测使用中", createdAt: "2025-10-10 10:27:18", updatedAt: nil, isActive: true),
+        SensorRow(code: "dht22_4", name: "待命名", sensorTypeCode: "dht22", unit: "°C/%", mqttField: "temp", precisionVal: 2, sortOrder: 0, edgeDeviceId: nil, description: "未使用", createdAt: "2026-01-20 11:00:18", updatedAt: nil, isActive: false),
+        SensorRow(code: "dht22_5", name: "待命名", sensorTypeCode: "dht22", unit: "°C/%", mqttField: "temp", precisionVal: 2, sortOrder: 0, edgeDeviceId: nil, description: "未使用", createdAt: "2026-01-20 11:00:18", updatedAt: nil, isActive: false),
+        SensorRow(code: "dht22_6", name: "未记录", sensorTypeCode: "dht22", unit: "°C/%", mqttField: "temp", precisionVal: 2, sortOrder: 0, edgeDeviceId: nil, description: nil, createdAt: nil, updatedAt: nil, isActive: true),
+        SensorRow(code: "sht30_1", name: "客厅环境 1 号位", sensorTypeCode: "sht30", unit: "°C/%", mqttField: "temp", precisionVal: 2, sortOrder: 0, edgeDeviceId: 4, description: "使用中", createdAt: "2026-01-20 11:00:18", updatedAt: nil, isActive: true),
+        SensorRow(code: "sht30_2", name: "实验用 1", sensorTypeCode: "sht30", unit: "°C / %", mqttField: "temp", precisionVal: 2, sortOrder: 1, edgeDeviceId: 3, description: "使用中", createdAt: "2026-04-19 13:32:00", updatedAt: nil, isActive: true),
+        SensorRow(code: "sht30_3", name: "未记录", sensorTypeCode: "sht30", unit: "°C/%", mqttField: "temp", precisionVal: 2, sortOrder: 0, edgeDeviceId: nil, description: nil, createdAt: nil, updatedAt: nil, isActive: false),
+        
+        SensorRow(code: "hc_sr501_1", name: "客厅微型人体红外感应模块PIR", sensorTypeCode: "hc_sr501", unit: "", mqttField: "human", precisionVal: 0, sortOrder: 0, edgeDeviceId: nil, description: "使用中-感应客厅是否有人", createdAt: nil, updatedAt: nil, isActive: true),
+        
+        SensorRow(code: "raspberry_pi_camera", name: "RaspberryPi 摄像头", sensorTypeCode: "raspberry_pi_camera_module3_unknown_brand", unit: "", mqttField: "camera", precisionVal: 0, sortOrder: 0, edgeDeviceId: nil, description: "使用中-客厅感应识别并录像", createdAt: nil, updatedAt: nil, isActive: true),
     ]
 
-    private static var seededKeys: [(edgeDeviceId: Int?, sensor: String)] {
-        sensorRows.map { ($0.edgeDeviceId, $0.code) }
-    }
+    private static var seededSensorCodes: [String] { sensorRows.map(\.code) }
 
     func prepare(on database: Database) async throws {
         for row in Self.sensorRows {
-            var deviceId = 0
-            if let deviceCode = row.deviceCode, 
-                let dev = try await Device.query(on: database).filter(\.$code == deviceCode).first() {
-                deviceId = dev.id!
-            }
-            var eDevId = 0
-            if let edgeDeviceId = row.edgeDeviceId,
-                let edev = try await EdgeDevice.query(on: database).filter(\.$id == edgeDeviceId).first() {
-                eDevId = edev.id!
-            }
-            if try await Sensor.query(on: database)
-                .filter(\.$deviceId == deviceId)
-                .filter(\.$code == row.code)
-                .first() != nil
-            {
+            if try await Sensor.query(on: database).filter(\.$code == row.code).first() != nil {
                 continue
             }
+            var eDevId: Int?
+            if let edgeDeviceId = row.edgeDeviceId,
+               let edev = try await EdgeDevice.query(on: database).filter(\.$id == edgeDeviceId).first(),
+               let id = edev.id
+            {
+                eDevId = id
+            }
+
             guard let st = try await SensorType.query(on: database).filter(\.$code == row.sensorTypeCode).first(),
                   let typeId = st.id
             else {
@@ -69,7 +79,6 @@ struct SeedSensors: AsyncMigration {
             }
 
             let s = Sensor()
-            s.deviceId = deviceId
             s.name = row.name
             s.code = row.code
             s.$sensorType.id = typeId
@@ -77,33 +86,27 @@ struct SeedSensors: AsyncMigration {
             s.mqttField = row.mqttField
             s.precisionVal = row.precisionVal
             s.sortOrder = row.sortOrder
-            s.isActive = true
             s.edgeDeviceId = eDevId
-            s.deviceId = deviceId
+            s.sensorDescription = row.description
+            s.createdAt = Self.parseStamp(row.createdAt)
+            s.updatedAt = Self.parseStamp(row.updatedAt)
+            s.isActive = row.isActive
             try await s.save(on: database)
         }
     }
 
     func revert(on database: Database) async throws {
-        for key in Self.seededKeys {
-            guard let dev = try await EdgeDevice.query(on: database).filter(\.$id == key.edgeDeviceId ?? 0).first(),
-                  let edgeDeviceId = dev.id
-            else { continue }
-            try await Sensor.query(on: database)
-                .filter(\.$edgeDeviceId == edgeDeviceId)
-                .filter(\.$code == key.sensor)
-                .delete()
+        for code in Self.seededSensorCodes {
+            try await Sensor.query(on: database).filter(\.$code == code).delete()
         }
     }
 
     private enum SeedSensorsError: Error, CustomStringConvertible {
-        case missingDevice(code: String)
         case missingSensorType(code: String)
 
         var description: String {
             switch self {
-            case .missingDevice(let c): return "SeedSensors: no device with code=\(c); run SeedDevices first."
-            case .missingSensorType(let c): return "SeedSensors: no sensor_type with code=\(c); run SeedSensorTypes first."
+            case .missingSensorType(let c): return "SeedSensors: no sensor_type with code=\(c)"
             }
         }
     }

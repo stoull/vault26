@@ -17,11 +17,20 @@ struct EdgeDeviceRoutes {
 
     struct SystemDeviceAddRequest: Decodable {
         let unique_id: String
+        /// 业务编码；省略时与 `unique_id` 相同
+        let code: String?
         let device_type: Int
         let device_name: String?
         let description: String?
         let locationId: Int?
         let group_name: String?
+        let mqtt_topic: String?
+        let status: String?
+        let firmware_version: String?
+        let hardware_version: String?
+        let ip_address: String?
+        let mac_address: String?
+        let sort_order: Int?
         let created_at: String?
         let last_seen: String?
         let is_active: Int?
@@ -41,11 +50,19 @@ struct EdgeDeviceRoutes {
     struct SystemDeviceUpdateRequest: Decodable {
         let id: Int
         let unique_id: String?
+        let code: String?
         let device_type: Int?
         let device_name: String?
         let description: String?
         let locationId: Int?
         let group_name: String?
+        let mqtt_topic: String?
+        let status: String?
+        let firmware_version: String?
+        let hardware_version: String?
+        let ip_address: String?
+        let mac_address: String?
+        let sort_order: Int?
         let created_at: String?
         let last_seen: String?
         let is_active: Int?
@@ -56,13 +73,22 @@ struct EdgeDeviceRoutes {
     struct SystemDeviceDTO: Encodable {
         let id: Int
         let unique_id: String
+        let code: String
         let device_type: Int
         let device_name: String?
         let description: String?
         let locationId: Int?
         let group_name: String?
+        let mqtt_topic: String
+        let status: String
+        let firmware_version: String?
+        let hardware_version: String?
+        let ip_address: String?
+        let mac_address: String?
+        let sort_order: Int
         let created_at: String
         let last_seen: String
+        let updated_at: String?
         let is_active: Int
 
         init(model: EdgeDevice) throws {
@@ -71,13 +97,22 @@ struct EdgeDeviceRoutes {
             }
             self.id = id
             self.unique_id = model.uniqueId
+            self.code = model.code
             self.device_type = model.$deviceType.id
             self.device_name = model.deviceName
             self.description = model.deviceDescription
             self.locationId = model.locationId
             self.group_name = model.groupName
+            self.mqtt_topic = model.mqttTopic
+            self.status = model.status
+            self.firmware_version = model.firmwareVersion
+            self.hardware_version = model.hardwareVersion
+            self.ip_address = model.ipAddress
+            self.mac_address = model.macAddress
+            self.sort_order = model.sortOrder
             self.created_at = Self.isoString(model.createdAt)
             self.last_seen = Self.isoString(model.lastSeen)
+            self.updated_at = model.updatedAt.map { Self.isoString($0) }
             self.is_active = model.isActive
         }
 
@@ -114,11 +149,22 @@ struct EdgeDeviceRoutes {
 
             let device = EdgeDevice()
             device.uniqueId = body.unique_id.trimmingCharacters(in: .whitespacesAndNewlines)
+            let trimmedCode = body.code?.trimmingCharacters(in: .whitespacesAndNewlines)
+            device.code = (trimmedCode?.isEmpty == false) ? trimmedCode! : device.uniqueId
             device.$deviceType.id = body.device_type
             device.deviceName = body.device_name
             device.deviceDescription = body.description
             device.locationId = body.locationId ?? 0
             device.groupName = body.group_name
+            let topic = body.mqtt_topic?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            device.mqttTopic = topic.isEmpty ? "-" : topic
+            let statusRaw = body.status?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            device.status = statusRaw.isEmpty ? "offline" : statusRaw
+            device.firmwareVersion = body.firmware_version
+            device.hardwareVersion = body.hardware_version
+            device.ipAddress = body.ip_address
+            device.macAddress = body.mac_address
+            device.sortOrder = body.sort_order ?? 0
             device.createdAt = created
             device.lastSeen = lastSeen
             device.isActive = active
@@ -291,8 +337,53 @@ struct EdgeDeviceRoutes {
                     device.isActive = v
                     touched = true
                 }
+                if let raw = body.code {
+                    let c = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !c.isEmpty else {
+                        return .failure(
+                            code: .badRequest,
+                            message: _t("code 不能为空", comment: "Validation when code is empty on update"),
+                            data: SystemDeviceMutationData(device: nil)
+                        )
+                    }
+                    device.code = c
+                    touched = true
+                }
+                if let raw = body.mqtt_topic {
+                    let t = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+                    device.mqttTopic = t.isEmpty ? "-" : t
+                    touched = true
+                }
+                if let raw = body.status {
+                    let s = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !s.isEmpty {
+                        device.status = s
+                        touched = true
+                    }
+                }
+                if let v = body.firmware_version {
+                    device.firmwareVersion = v
+                    touched = true
+                }
+                if let v = body.hardware_version {
+                    device.hardwareVersion = v
+                    touched = true
+                }
+                if let v = body.ip_address {
+                    device.ipAddress = v
+                    touched = true
+                }
+                if let v = body.mac_address {
+                    device.macAddress = v
+                    touched = true
+                }
+                if let v = body.sort_order {
+                    device.sortOrder = v
+                    touched = true
+                }
 
                 if touched {
+                    device.updatedAt = Date()
                     try await device.update(on: db)
                 }
                 let dto = try SystemDeviceDTO(model: device)

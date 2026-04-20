@@ -59,7 +59,7 @@ struct CreateLocation: AsyncMigration {
             """
             ALTER TABLE `location`
               MODIFY COLUMN `name` VARCHAR(255) NOT NULL COMMENT '显示名称（Living Room）',
-              MODIFY COLUMN `code` VARCHAR(255) NOT NULL COMMENT '唯一编码（livingroom）',
+              MODIFY COLUMN `code` VARCHAR(128) NOT NULL COMMENT '唯一编码（livingroom）',
               MODIFY COLUMN `type` VARCHAR(255) NOT NULL COMMENT '类型（home/room/building）'
             """
         ).run()

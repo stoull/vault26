@@ -44,8 +44,8 @@ struct CreateSensorType: AsyncMigration {
             """
             ALTER TABLE `sensor_type`
               MODIFY COLUMN `name` VARCHAR(255) NOT NULL COMMENT '显示名（Env Sensor）',
-              MODIFY COLUMN `code` VARCHAR(255) NOT NULL COMMENT '唯一标识（env）',
-              MODIFY COLUMN `mqtt_prefix` VARCHAR(255) NOT NULL COMMENT 'mqtt 分类前缀（env/light）'
+              MODIFY COLUMN `code` VARCHAR(128) NOT NULL COMMENT '唯一标识（env）',
+              MODIFY COLUMN `mqtt_prefix` VARCHAR(64) NOT NULL COMMENT 'mqtt 分类前缀（env/light）'
             """
         ).run()
     }

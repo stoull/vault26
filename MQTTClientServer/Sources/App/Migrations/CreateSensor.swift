@@ -2,7 +2,7 @@
 //  CreateSensor.swift
 //  MQTTClientServer
 //
-//  空库初始化：创建 sensor（依赖 `device`）
+//  空库初始化：创建 sensor（依赖 `sensor_type`、`edge_device` 为可选关联）
 //
 
 import Foundation
@@ -15,7 +15,6 @@ struct CreateSensor: AsyncMigration {
     func prepare(on database: Database) async throws {
         try await database.schema(Sensor.schema)
             .field("id", .int, .identifier(auto: true))
-            .field("device_id", .int)
             .field("edge_device_id", .int)
             .field("name", .string, .required)
             .field("code", .string, .required)
@@ -54,14 +53,16 @@ struct CreateSensor: AsyncMigration {
             throw CommentMigrationError.sqlDatabaseRequired
         }
 
-        // 勿对 `device_id`、`type` 做 MODIFY：列上已有外键，MySQL 会拒绝（与 CreateDevice 相同）。
+        // 勿对 `edge_device_id`、`type` 做 MODIFY：列上若加外键，MySQL 会拒绝随意 MODIFY。
         try await sql.raw(
             """
             ALTER TABLE `sensor`
               MODIFY COLUMN `edge_device_id` INT NULL COMMENT '属于哪个边缘设备',
               MODIFY COLUMN `name` VARCHAR(255) NOT NULL COMMENT '显示名（Temperature）',
-              MODIFY COLUMN `code` VARCHAR(255) NOT NULL COMMENT '唯一标识（temperature）',
-              MODIFY COLUMN `unit` VARCHAR(255) NULL COMMENT '单位（°C/%）'
+              MODIFY COLUMN `code` VARCHAR(128) NOT NULL COMMENT '唯一标识（temperature）',
+              MODIFY COLUMN `unit` VARCHAR(64) NULL COMMENT '单位（°C/%）',
+              MODIFY COLUMN `mqtt_field` VARCHAR(255) NULL COMMENT 'MQTT 负载 JSON 中与本传感点对应的键名（如 temp、humidity）',
+              MODIFY COLUMN `precision_val` INT NOT NULL COMMENT '数值小数位数，用于展示或量化存储（如 2 表示保留两位小数）'
             """
         ).run()
     }
