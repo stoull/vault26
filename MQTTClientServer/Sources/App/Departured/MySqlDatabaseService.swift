@@ -11,6 +11,11 @@ import NIO
 import Logging
 import SwiftyJSON
 
+/**
+    直接使用 MySQLNIO 连接 MariaDB 的示例，已不用
+    直接使用 MySQLNIO 连接 MariaDB，提供更底层的数据库操作接口。
+    MySqlDatabaseService 负责管理与 MariaDB 的连接，并提供保存 MQTT 消息的接口。
+ */
 class MySqlDatabaseService {
     private let logger = Logger(label: "com.mqttserver.database")
     private let eventLoopGroup: EventLoopGroup
