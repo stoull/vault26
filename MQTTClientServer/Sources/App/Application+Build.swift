@@ -51,9 +51,8 @@ func buildApplication() async throws -> some ApplicationProtocol {
         SeedSensorTypes(),
         CreateSensor(),
         SeedSensors(),
-        CreateSensorDataTempHumi(),
+        CreateEnvironmentReadings(),
         CreateEdgeDeviceMetric()
-        // AddSensorTypeToSensorDataTempHumi()
     ])
 
     // 4. 启动 MQTT 服务

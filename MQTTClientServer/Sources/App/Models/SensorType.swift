@@ -8,7 +8,7 @@
 import Foundation
 import Fluent
 
-
+/// 传感器类型字典（温湿度、光照、空气质量、人体红外、摄像头等）
 final class SensorType: Model, @unchecked Sendable {
     static let schema = "sensor_type"
 

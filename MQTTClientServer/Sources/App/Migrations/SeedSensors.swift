@@ -51,7 +51,18 @@ struct SeedSensors: AsyncMigration {
         SensorRow(code: "sht30_1", name: "客厅环境 1 号位", sensorTypeCode: "sht30", unit: "°C/%", mqttField: "temp", precisionVal: 2, sortOrder: 0, edgeDeviceId: 4, description: "使用中", createdAt: "2026-01-20 11:00:18", updatedAt: nil, isActive: true),
         SensorRow(code: "sht30_2", name: "实验用 1", sensorTypeCode: "sht30", unit: "°C / %", mqttField: "temp", precisionVal: 2, sortOrder: 1, edgeDeviceId: 3, description: "使用中", createdAt: "2026-04-19 13:32:00", updatedAt: nil, isActive: true),
         SensorRow(code: "sht30_3", name: "未记录", sensorTypeCode: "sht30", unit: "°C/%", mqttField: "temp", precisionVal: 2, sortOrder: 0, edgeDeviceId: nil, description: nil, createdAt: nil, updatedAt: nil, isActive: false),
-        
+
+        // 温湿度（新增）
+        SensorRow(code: "shtc3_1", name: "主卧温湿度 SHTC3", sensorTypeCode: "shtc3", unit: "°C/%", mqttField: "temp", precisionVal: 2, sortOrder: 2, edgeDeviceId: 3, description: "低功耗温湿度采集", createdAt: "2026-04-20 00:00:00", updatedAt: nil, isActive: true),
+
+        // 光照（新增）
+        SensorRow(code: "bh1750_1", name: "客厅光照 BH1750", sensorTypeCode: "bh1750", unit: "lux", mqttField: "illuminance", precisionVal: 1, sortOrder: 3, edgeDeviceId: 4, description: "环境光照强度", createdAt: "2026-04-20 00:00:00", updatedAt: nil, isActive: true),
+        SensorRow(code: "tsl2591_1", name: "阳台光照 TSL2591", sensorTypeCode: "tsl2591", unit: "lux", mqttField: "illuminance", precisionVal: 1, sortOrder: 4, edgeDeviceId: nil, description: "高动态范围光照", createdAt: "2026-04-20 00:00:00", updatedAt: nil, isActive: true),
+
+        // 空气质量（新增）
+        SensorRow(code: "pms7003_1", name: "客厅 PM2.5 PMS7003", sensorTypeCode: "pms7003", unit: "ug/m3", mqttField: "pm25", precisionVal: 1, sortOrder: 5, edgeDeviceId: 4, description: "空气颗粒物监测", createdAt: "2026-04-20 00:00:00", updatedAt: nil, isActive: true),
+        SensorRow(code: "ccs811_1", name: "客厅空气质量 CCS811", sensorTypeCode: "ccs811", unit: "ppm/ppb", mqttField: "co2", precisionVal: 1, sortOrder: 6, edgeDeviceId: 4, description: "eCO2 与 TVOC 监测", createdAt: "2026-04-20 00:00:00", updatedAt: nil, isActive: true),
+
         SensorRow(code: "hc_sr501_1", name: "客厅微型人体红外感应模块PIR", sensorTypeCode: "hc_sr501", unit: "", mqttField: "human", precisionVal: 0, sortOrder: 0, edgeDeviceId: nil, description: "使用中-感应客厅是否有人", createdAt: nil, updatedAt: nil, isActive: true),
         
         SensorRow(code: "raspberry_pi_camera", name: "RaspberryPi 摄像头", sensorTypeCode: "raspberry_pi_camera_module3_unknown_brand", unit: "", mqttField: "camera", precisionVal: 0, sortOrder: 0, edgeDeviceId: nil, description: "使用中-客厅感应识别并录像", createdAt: nil, updatedAt: nil, isActive: true),

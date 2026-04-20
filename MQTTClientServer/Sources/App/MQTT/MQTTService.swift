@@ -51,7 +51,6 @@ actor MQTTService {
                                                                  length: message.payload.readableBytes,
                                                                  encoding: .utf8) {
                     await self.processor.process(topic: topic, payloadString: payloadString)
-                    self.logger.info("MQTT listening on topics: \(config.MQTT_HOST):\(config.MQTT_PORT)")
                 } else {
                     self.logger.warning("Failed to decode payload for topic: \(topic)")
                 }
@@ -59,6 +58,7 @@ actor MQTTService {
                 self.logger.error("MQTT receive error: \(error)")
             }
         }
+        self.logger.info("MQTT listening on topics: \(config.MQTT_HOST):\(config.MQTT_PORT)")
         self.listenerTask = task
     }
 

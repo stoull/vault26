@@ -1,25 +1,31 @@
 //
-//  File.swift
+//  CreateEnvironmentReadings.swift
 //  MQTTClientServer
 //
-//  Created by Hut on 2026/4/10.
+//  Created by Hut on 2026/4/20.
 //
 
 import Foundation
 import Fluent
 
-struct CreateSensorDataTempHumi: AsyncMigration {
-    // Provide an explicit name to avoid unstable default names
-    var name: String { "CreateSensorData" }
+struct CreateEnvironmentReadings: AsyncMigration {
+    var name: String { "CreateEnvironmentReadings" }
 
     func prepare(on database: Database) async throws {
-        try await database.schema(SensorDataTempHumi.schema)
+        try await database.schema(EnvironmentReadings.schema)
             .field("id", .int, .identifier(auto: true))
             .field("location_id", .int, .required)
-            .field("sensor_type", .int)
             .field("sensor_id", .int, .required)
+            .field("sensor_type", .int)
             .field("temperature", .double)
             .field("humidity", .double)
+            .field("illuminance", .double)
+            .field("pm25", .double)
+            .field("co2", .double)
+            .field("hcho", .double)
+            .field("tvoc", .double)
+            .field("pressure", .double)
+            .field("smoke_gas", .double)
             .field("created_at", .datetime, .required)
             .field("created_at_iso", .string, .required)
             .field("received_at", .datetime, .required)
@@ -28,19 +34,19 @@ struct CreateSensorDataTempHumi: AsyncMigration {
                 references: Location.schema,
                 "id",
                 onDelete: .cascade,
-                name: "fk_sensor_data_temp_humi_location_id"
+                name: "fk_environment_readings_location_id"
             )
             .foreignKey(
                 "sensor_id",
                 references: Sensor.schema,
                 "id",
                 onDelete: .cascade,
-                name: "fk_sensor_data_temp_humi_sensor_id"
+                name: "fk_environment_readings_sensor_id"
             )
             .create()
     }
 
     func revert(on database: Database) async throws {
-        try await database.schema(SensorDataTempHumi.schema).delete()
+        try await database.schema(EnvironmentReadings.schema).delete()
     }
 }

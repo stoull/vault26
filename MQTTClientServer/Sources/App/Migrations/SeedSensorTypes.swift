@@ -13,6 +13,7 @@ struct SeedSensorTypes: AsyncMigration {
 
     /// 与 `MQTTMessageProcessor.saveSensorEnvData` 中 `switch sensorType.lowercased()` 分支一致；`mqtt_prefix` 与 `home/+/env/+/status` 对齐。
     private static let rows: [(name: String, code: String, mqttPrefix: String, description: String?)] = [
+        // 温湿度
         ("DHT11", "dht11", "env", "入门级温湿度，精度一般"),
         ("DHT20", "dht20", "env", nil),
         ("DHT22", "dht22", "env", "AM2302 同族"),
@@ -30,7 +31,17 @@ struct SeedSensorTypes: AsyncMigration {
         ("BME680", "bme680", "env", "温湿压 + 气体"),
         ("HTU21D", "htu21d", "env", "TE Connectivity"),
         ("HTU31D", "htu31d", "env", nil),
-        
+        ("SHTC3", "shtc3", "env", "低功耗温湿度"),
+
+        // 光照
+        ("BH1750", "bh1750", "env", "数字光照强度传感器（lux）"),
+        ("TSL2591", "tsl2591", "env", "高动态范围光照强度传感器"),
+
+        // 空气质量
+        ("PMS7003", "pms7003", "env", "激光粉尘传感器，支持 PM1.0/2.5/10"),
+        ("SCD40", "scd40", "env", "CO2 传感器，含温湿度补偿"),
+        ("CCS811", "ccs811", "env", "eCO2/TVOC 数字空气质量传感器"),
+
         ("HC-SR501", "hc_sr501", "human", "微型人体红外感应模块PIR,2~5米，角度小于120°"),
         
         ("Raspberry Pi Camera Module 3", "raspberry_pi_camera_module3_official", "camera", "The classic compact camera for Raspberry Pi with a 12MP sensor and autofocus"),

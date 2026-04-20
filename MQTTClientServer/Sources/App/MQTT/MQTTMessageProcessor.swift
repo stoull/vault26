@@ -42,7 +42,7 @@ actor MQTTMessageProcessor {
         }
     }
     
-    /// 将 `home/+/env/+/status` 消息的 JSON 写入 `sensor_data_temp_humi` 表
+    /// 将 `home/+/env/+/state` 消息的 JSON 写入 `environment_readings` 表
     private func saveSensorEnvData(topic: String, payload: String, locationCode: String, sensorId: String) async {
         guard let sensorIdInt = Int(sensorId)
         else {
@@ -63,9 +63,14 @@ actor MQTTMessageProcessor {
 
         let temperature = jsonDouble(json, key: "temperature")
         let humidity = jsonDouble(json, key: "humidity")
-        let createdAtISO =
-            (json["created_at"] as? String)
-            ?? (json["createdAt"] as? String)
+        let illuminance = jsonDoubleAny(json, keys: ["illuminance", "lux", "light"])
+        let pm25 = jsonDoubleAny(json, keys: ["pm25", "pm2_5", "pm_25"])
+        let co2 = jsonDoubleAny(json, keys: ["co2"])
+        let hcho = jsonDoubleAny(json, keys: ["hcho", "formaldehyde"])
+        let tvoc = jsonDoubleAny(json, keys: ["tvoc"])
+        let pressure = jsonDoubleAny(json, keys: ["pressure", "pressure_pa"])
+        let smokeGas = jsonDoubleAny(json, keys: ["smoke_gas", "smokeGas", "smoke", "gas"])
+        let createdAtISO = (json["created_at"] as? String) ?? (json["createdAt"] as? String)
 
         guard let dbManager = self.dbManager else {
             logger.warning("No DatabaseManager available: skipping save for topic=\(topic)")
@@ -87,7 +92,7 @@ actor MQTTMessageProcessor {
         }
 
         //  在读取一下 sensor_type 表，获取 sensor_type_id
-        var sensorType = jsonStringNonEmpty(json, key: "type") ?? ""
+        let sensorType = jsonStringNonEmpty(json, key: "type") ?? ""
         let sensorTypeRow: SensorType?
         do {
             sensorTypeRow = try await SensorType.query(on: db).filter(\.$code == sensorType).first()
@@ -100,20 +105,27 @@ actor MQTTMessageProcessor {
             return
         }
 
-        let record = SensorDataTempHumi(
+        let record = EnvironmentReadings(
             locationId: locationId,
             sensorId: sensorIdInt,
             sensorType: sensorTypeId,
             temperature: temperature,
             humidity: humidity,
-            created_at: createdAtISO
+            illuminance: illuminance,
+            pm25: pm25,
+            co2: co2,
+            hcho: hcho,
+            tvoc: tvoc,
+            pressure: pressure,
+            smokeGas: smokeGas,
+            createdAtISO: createdAtISO
         )
 
         do {
             try await dbManager.withRetry(maxAttempts: 3, delay: .seconds(2)) {
                 try await record.save(on: db)
             }
-            logger.info("Saved SensorDataTempHumi topic=\(topic) sensor_type=\(sensorTypeRow.name) sensor_id=\(sensorIdInt)")
+            logger.info("Saved EnvironmentReadings topic=\(topic) sensor_type=\(sensorTypeRow.name) sensor_id=\(sensorIdInt)")
         } catch {
             logger.error("Save failed after retries: \(error)")
         }
@@ -242,5 +254,14 @@ actor MQTTMessageProcessor {
         }
         return nil
     }
-    
+
+    private func jsonDoubleAny(_ json: [String: Any], keys: [String]) -> Double? {
+        for key in keys {
+            if let value = jsonDouble(json, key: key) {
+                return value
+            }
+        }
+        return nil
+    }
+
 }
