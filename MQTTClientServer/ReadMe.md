@@ -143,3 +143,68 @@ Fluent 判断「要不要执行某个迁移」**只看** `_fluent_migrations` �
 | 只想「补表」又不想动迁移记录 | Fluent 没有内置「发现缺表就再建」；要自己写 SQL / 新迁移，或用手动对齐状态。 |
 
 总结：**`_fluent_migrations` 是「迁移是否跑过」的账本；业务表是「结构是否真的存在」。** 只删表不删账本会不再建表；只删账本不删表会 `CREATE` 撞车报错。
+
+---
+
+## 集成测试：双模式（环境变量切换）
+
+`MQTTMessageProcessor` 集成测试支持两种模式，由 `TEST_DB_MODE` 控制：
+
+1. `fixed`（默认）：固定测试库模式（方案 B）
+2. `isolated`：自动创建/销毁临时库模式
+
+### 模式说明
+
+- `fixed`
+  - 连接 `TEST_DB_DATABASE` 指定的固定测试库
+  - 跑迁移 + seed（幂等）
+  - 清理可变表（如 `edge_device_metric`、`environment_readings`）
+  - 不需要 `CREATE/DROP DATABASE` 权限
+  - 需要该测试库已存在（不存在会被测试框架标记为 skipped）
+
+- `isolated`
+  - 使用 `TEST_DB_DATABASE` 作为库名前缀
+  - 每个测试用例自动创建唯一临时库并在结束后删除
+  - 需要数据库账号具备建库/删库权限
+  - 管理库由 `TEST_DB_ADMIN_DATABASE` 指定（默认 `mysql`）
+
+### 需要的环境变量
+
+- `TEST_DB_DATABASE`：固定测试库名（必填）
+- `TEST_DB_MODE`：`fixed` 或 `isolated`（可选，默认 `fixed`）
+- `TEST_DB_HOST`：数据库地址（可选，默认回退 `DB_HOST`）
+- `TEST_DB_PORT`：数据库端口（可选，默认回退 `DB_PORT` 或 `3306`）
+- `TEST_DB_USERNAME`：数据库用户（可选，默认回退 `DB_USERNAME`）
+- `TEST_DB_PASSWORD`：数据库密码（可选，默认回退 `DB_PASSWORD`）
+- `TEST_DB_ADMIN_DATABASE`：仅 `isolated` 模式使用（可选，默认 `mysql`）
+
+### 本地运行示例
+
+```bash
+export TEST_DB_DATABASE=home_db_test
+export TEST_DB_MODE=fixed
+export TEST_DB_HOST=127.0.0.1
+export TEST_DB_PORT=3306
+export TEST_DB_USERNAME=your_user
+export TEST_DB_PASSWORD=your_password
+
+cd MQTTClientServer
+swift test --filter MQTTMessageProcessor
+```
+
+如需临时库模式：
+
+```bash
+export TEST_DB_DATABASE=home_db_test
+export TEST_DB_MODE=isolated
+export TEST_DB_ADMIN_DATABASE=mysql
+swift test --filter MQTTMessageProcessor
+```
+
+### 常见跳过原因
+
+如果你看到：
+
+`Integration test skipped: set TEST_DB_DATABASE...`
+
+说明当前终端会话没有注入固定测试库变量；在同一个终端 `export TEST_DB_DATABASE=...` 后再执行 `swift test` 即可。
