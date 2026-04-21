@@ -17,41 +17,35 @@ actor MQTTMessageProcessor {
         
         /**
         匹配 home/+/env/+/status 模式
-        RAW MQTT: topic=home/livingroom/env/ACA704D777EC/state payload={"temp":27.1,"humi":65.4,"type":"sth30","created_at":"2026-04-18T13:42:52+08:00"}
+        RAW MQTT: topic=home/livingroom/env/esp32_D777EC/state payload={"temp":27.1,"humi":65.4,"type":"sth30","created_at":"2026-04-18T13:42:52+08:00"}
          */
-        let pattern = "home/+/env/+/state" // 原为：sensor/env/+/+/data
+        let pattern = "+/+/env/+/state" // 订阅所有上传的env类型数据
         if MQTTTopicPattern.matchesMQTTPattern(topic: topic, pattern: pattern),
-              let locationCode = MQTTTopicPattern.extractFromTopic(topic, pattern: pattern, wildcardIndex: 0),
-           let sensorId = MQTTTopicPattern.extractFromTopic(topic, pattern: pattern, wildcardIndex: 1) {
-            await saveSensorEnvData(topic: topic, payload: payloadString, locationCode: locationCode, sensorId: sensorId)
+           let locationRoot = MQTTTopicPattern.extractFromTopic(topic, pattern: pattern, wildcardIndex: 0),
+           let locationCode = MQTTTopicPattern.extractFromTopic(topic, pattern: pattern, wildcardIndex: 1),
+           let deviceIdStr = MQTTTopicPattern.extractFromTopic(topic, pattern: pattern, wildcardIndex: 2) {
+            await saveSensorEnvData(topic: topic, payload: payloadString, locationCode: locationCode)
         }
 
         /**
         匹配 home/+/+/+/metrics，写入 edge_device_metric
          
 
-        RAW MQTT: home/livingroom/env/4/metrics payload={"unique_id":"ACA704D777EC","platform":"esp32c3","os_version":"v5.5.1-931-g9bb7aa84fe","cpu_frequency_mhz":160,"cpu_temperature":"","total_storage_bytes":4194304,"used_storage_bytes":0,"free_storage_bytes":1318001,"storage_usage_percent":68.57641,"total_memory_bytes":300472,"used_memory_bytes":104508,"free_memory_bytes":195964,"memory_usage_percent":34.78128,"uptime_seconds":67206,"reset_reason":0,"ip":"192.168.1.123","subnet":"255.255.255.0","gateway":"192.168.1.1","dns":"192.168.1.1","rssi":"-56","mac":"AC:A7:04:D7:77:EC","created_at":"2026-04-18T13:47:52+08:00"}
+        RAW MQTT: home/livingroom/env/esp32_D777EC/metrics payload={"unique_id":"ACA704D777EC","platform":"esp32c3","os_version":"v5.5.1-931-g9bb7aa84fe","cpu_frequency_mhz":160,"cpu_temperature":"","total_storage_bytes":4194304,"used_storage_bytes":0,"free_storage_bytes":1318001,"storage_usage_percent":68.57641,"total_memory_bytes":300472,"used_memory_bytes":104508,"free_memory_bytes":195964,"memory_usage_percent":34.78128,"uptime_seconds":67206,"reset_reason":0,"ip":"192.168.1.123","subnet":"255.255.255.0","gateway":"192.168.1.1","dns":"192.168.1.1","rssi":"-56","mac":"AC:A7:04:D7:77:EC","created_at":"2026-04-18T13:47:52+08:00"}
          */
-        let deviceInfoPattern = "home/+/+/+/metrics"    // 原为：device/system/+/device_info
+        let deviceInfoPattern = "+/+/+/+/metrics"   // 订阅所有的设备信息
         if MQTTTopicPattern.matchesMQTTPattern(topic: topic, pattern: deviceInfoPattern),
-           let locationCode = MQTTTopicPattern.extractFromTopic(topic, pattern: deviceInfoPattern, wildcardIndex: 0),
-           let typeCode = MQTTTopicPattern.extractFromTopic(topic, pattern: deviceInfoPattern, wildcardIndex: 1),
-           let deviceIdStr = MQTTTopicPattern.extractFromTopic(topic, pattern: deviceInfoPattern, wildcardIndex: 2),
+           let locationRoot = MQTTTopicPattern.extractFromTopic(topic, pattern: deviceInfoPattern, wildcardIndex: 0),
+           let locationCode = MQTTTopicPattern.extractFromTopic(topic, pattern: deviceInfoPattern, wildcardIndex: 1),
+           let typeCode = MQTTTopicPattern.extractFromTopic(topic, pattern: deviceInfoPattern, wildcardIndex: 2),
+           let deviceIdStr = MQTTTopicPattern.extractFromTopic(topic, pattern: deviceInfoPattern, wildcardIndex: 3),
            let deviceId = Int(deviceIdStr) {
             await saveEdgeDeviceMetricData(topic: topic, payload: payloadString, deviceId: deviceId)
         }
     }
     
-    /// 将 `home/+/env/+/state` 消息的 JSON 写入 `environment_readings` 表
-    private func saveSensorEnvData(topic: String, payload: String, locationCode: String, sensorId: String) async {
-        guard let sensorIdInt = Int(sensorId)
-        else {
-            logger.warning(
-                "Topic \(topic): sensor_id must be integers, got sensorId=\(sensorId)"
-            )
-            return
-        }
-        
+    /// 将 `+/+/env/+/state` 消息的 JSON 写入 `environment_readings` 表
+    private func saveSensorEnvData(topic: String, payload: String, locationCode: String) async {
         // RAW MQTT: topic=home/livingroom/env/1/state payload={"temp":27.1,"humi":65.4,"type":"sth30","created_at":"2026-04-18T13:42:52+08:00"}
 
         guard let data = payload.data(using: .utf8),
@@ -61,6 +55,7 @@ actor MQTTMessageProcessor {
             return
         }
 
+        let sensorIdInt = jsonIntDefault(json, key: "sensor_id")
         let temperature = jsonDouble(json, key: "temperature")
         let humidity = jsonDouble(json, key: "humidity")
         let illuminance = jsonDoubleAny(json, keys: ["illuminance", "lux", "light"])
