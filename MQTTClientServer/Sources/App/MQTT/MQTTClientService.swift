@@ -91,8 +91,9 @@ actor MQTTClientService {
             let listener = client.createPublishListener()
             for await result in listener {
                 switch result {
-                case .success(let msg):
-                    logger.info("MQTTClientService: received publish for topic=\(msg.topicName)")
+                case .success(_):
+                    // logger.info("MQTTClientService: received publish for topic=\(msg.topicName)")
+                    break
                 case .failure(let err):
                     logger.warning("MQTTClientService: publish listener yielded error=\(err)")
                 }

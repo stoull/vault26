@@ -9,5 +9,4 @@ else
 fi
 
 # 运行应用
-# swift run
-swift test
+swift run

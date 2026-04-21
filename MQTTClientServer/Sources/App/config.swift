@@ -44,6 +44,21 @@ enum config {
         let topicsString = "home/+/+/+/metrics,home/+/env/+/status,home/+/env/+/state,sensor/env/+/+/data,test/updates,sensor/dht22/+/data,device/system/+/device_info,note/+/home"
         return topicsString.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
     }()
+    static let mqttSystemTopics: [String] =
+    {
+        /**
+        开发/运维诊断：订阅 $SYS/#（你现在就是这样）
+        生产环境更克制：只订阅你真正要用的几条，减少流量与 ACL 风险
+        $SYS/broker/clients/connected：当前连接客户端数
+        $SYS/broker/clients/total：累计客户端数（有的版本不一定有）
+        $SYS/broker/messages/received：Broker 收到的消息数
+        $SYS/broker/messages/sent：Broker 发出的消息数
+        $SYS/broker/uptime：Broker 运行时长
+        $SYS/broker/load/messages/received/1min：负载类指标（不同版本路径可能不同）
+        */
+        let topicsString = "$SYS/#"
+        return topicsString.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
+    }()
     static let mqttEnableTSL = false
     static let mqttKeepAliveInterval = Int64(60)
     

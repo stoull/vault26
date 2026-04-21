@@ -13,7 +13,7 @@ actor MQTTMessageProcessor {
 
     func process(topic: String, payloadString: String) async {
         // Diagnostic: log raw payload early to ensure we see incoming messages even if JSON parsing fails
-        logger.info("RAW MQTT: topic=\(topic) payload=\(payloadString)")
+        logger.info("MQTTMessageProcessor: received RAW MQTT: topic=\(topic) payload=\(payloadString)")
         
         /**
         匹配 home/+/env/+/status 模式
