@@ -8,6 +8,11 @@ else
     echo "⚠️  未找到 .env 文件，使用默认配置"
 fi
 
-# 运行应用
-#swift run
-swift test
+# 默认：启动应用；`./run.sh --test` 时运行测试
+if [ "${1:-}" = "--test" ]; then
+    echo "▶ 运行 swift test"
+    swift test
+else
+    echo "▶ 运行 swift run"
+    swift run
+fi
