@@ -15,6 +15,12 @@ final class EdgeDeviceMetric: Model, @unchecked Sendable {
     @ID(custom: "id", generatedBy: .database)
     var id: Int?
 
+    @OptionalParent(key: "location_root_id")
+    var location_root: Location?
+    
+    @OptionalParent(key: "location_id")
+    var location: Location?
+    
     @Parent(key: "device_id")
     var device: EdgeDevice
 

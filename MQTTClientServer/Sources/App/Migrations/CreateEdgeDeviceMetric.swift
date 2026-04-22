@@ -15,7 +15,9 @@ struct CreateEdgeDeviceMetric: AsyncMigration {
     func prepare(on database: Database) async throws {
         try await database.schema(EdgeDeviceMetric.schema)
             .field("id", .int, .identifier(auto: true))
-            .field("device_id", .int, .required)
+            .field("location_root_id", .int)
+            .field("location_id", .int)
+            .field("device_id", .int)
             .field("created_at_iso", .string)
             .field("timestamp", .datetime, .required)
             .field("platform", .string)
@@ -41,11 +43,25 @@ struct CreateEdgeDeviceMetric: AsyncMigration {
             .field("rssi", .int)
             .field("extra_data", .json)
             .foreignKey(
+                "location_root_id",
+                references: Location.schema,
+                "id",
+                onDelete: .cascade,
+                name: "fk_edge_device_metric_location_root_id"
+            )
+            .foreignKey(
+                "location_id",
+                references: Location.schema,
+                "id",
+                onDelete: .cascade,
+                name: "fk_edge_device_metric_location_id"
+            )
+            .foreignKey(
                 "device_id",
                 references: EdgeDevice.schema,
                 "id",
                 onDelete: .cascade,
-                name: "fk_system_device_snapshot_device"
+                name: "fk_edge_device_metric_device_id"
             )
             .create()
 

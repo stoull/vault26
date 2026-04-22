@@ -15,11 +15,14 @@ final class EnvironmentReadings: Model, @unchecked Sendable {
     @ID(custom: "id", generatedBy: .database)
     var id: Int?
 
+    @Parent(key: "location_root_id")
+    var location_root: Location
+    
     @Parent(key: "location_id")
     var location: Location
 
-    @Parent(key: "sensor_id")
-    var sensor: Sensor
+    @OptionalParent(key: "sensor_id")
+    var sensor: Sensor?
 
     @OptionalField(key: "sensor_type")
     var sensorType: Int?
@@ -63,8 +66,9 @@ final class EnvironmentReadings: Model, @unchecked Sendable {
     init() {}
 
     init(
+        locationRootId: Int,
         locationId: Int,
-        sensorId: Int,
+        sensorId: Int? = nil,
         sensorType: Int? = nil,
         temperature: Double? = nil,
         humidity: Double? = nil,
@@ -77,6 +81,7 @@ final class EnvironmentReadings: Model, @unchecked Sendable {
         smokeGas: Double? = nil,
         createdAtISO: String?
     ) {
+        self.$location_root.id = locationRootId
         self.$location.id = locationId
         self.$sensor.id = sensorId
         self.sensorType = sensorType

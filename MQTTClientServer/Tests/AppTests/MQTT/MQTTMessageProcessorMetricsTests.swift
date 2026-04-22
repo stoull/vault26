@@ -15,7 +15,7 @@ final class MQTTMessageProcessorMetricsTests: XCTestCase {
 
             let processor = MQTTMessageProcessor(dbManager: dbManager)
             await processor.process(
-                topic: "home/livingroom/env/\(deviceId)/metrics",
+                topic: "home/livingroom/env/esp32_D777EC/metrics",
                 payloadString: MQTTPayloadFactory.metricsMinimalValid()
             )
 

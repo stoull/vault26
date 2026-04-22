@@ -14,8 +14,9 @@ struct CreateEnvironmentReadings: AsyncMigration {
     func prepare(on database: Database) async throws {
         try await database.schema(EnvironmentReadings.schema)
             .field("id", .int, .identifier(auto: true))
+            .field("location_root_id", .int, .required)
             .field("location_id", .int, .required)
-            .field("sensor_id", .int, .required)
+            .field("sensor_id", .int)
             .field("sensor_type", .int)
             .field("temperature", .double)
             .field("humidity", .double)
@@ -29,6 +30,13 @@ struct CreateEnvironmentReadings: AsyncMigration {
             .field("created_at", .datetime, .required)
             .field("created_at_iso", .string, .required)
             .field("received_at", .datetime, .required)
+            .foreignKey(
+                "location_root_id",
+                references: Location.schema,
+                "id",
+                onDelete: .cascade,
+                name: "fk_environment_readings_location_root_id"
+            )
             .foreignKey(
                 "location_id",
                 references: Location.schema,

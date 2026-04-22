@@ -13,7 +13,7 @@ enum MQTTPayloadFactory {
           "tvoc": 0.15,
           "pressure": 100845.0,
           "smoke_gas": 0.0,
-          "type": "sht30",
+          "sensor_type": "sht30",
           "created_at": "2026-04-20T10:30:00+08:00"
         }
         """
@@ -24,7 +24,7 @@ enum MQTTPayloadFactory {
         {
           "temperature": 26.5,
           "humidity": 61.2,
-          "type": "sht30",
+          "sensor_type": "sht30",
           "created_at": "2026-04-20T10:30:00+08:00"
         }
         """
