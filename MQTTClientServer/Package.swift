@@ -7,16 +7,16 @@ let package = Package(
     dependencies: [
         // 声明要哪些外部包，拉哪个仓库、什么版本,下载源码包到本地，并构建
         // Hummingbird 2 web framework
-        .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "2.0.0"),
+        .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "2.20.0"),
         // MQTT NIO client
-        .package(url: "https://github.com/adam-fowler/mqtt-nio.git", from: "2.11.0"),
+        .package(url: "https://github.com/adam-fowler/mqtt-nio.git", from: "2.12.0"),
         // Fluent ORM
-        .package(url: "https://github.com/vapor/fluent.git", from: "4.9.0"),
+        .package(url: "https://github.com/vapor/fluent.git", from: "4.13.0"),
         // MySQL/MariaDB driver
-        .package(url: "https://github.com/vapor/fluent-mysql-driver.git", from: "4.4.0"),
-        .package(url: "https://github.com/apple/swift-nio.git", from: "2.65.0"),
-        .package(url: "https://github.com/apple/swift-nio-ssl.git", from: "2.14.0"),
-        .package(url: "https://github.com/vapor/sql-kit.git", from: "3.28.0")
+        .package(url: "https://github.com/vapor/fluent-mysql-driver.git", from: "4.8.0"),
+        .package(url: "https://github.com/apple/swift-nio.git", from: "2.96.0"),
+        .package(url: "https://github.com/apple/swift-nio-ssl.git", from: "2.36.0"),
+        .package(url: "https://github.com/vapor/sql-kit.git", from: "3.34.0")
     ],
     targets: [
         .executableTarget(

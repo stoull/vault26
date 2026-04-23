@@ -59,7 +59,7 @@ WORKDIR /app
 RUN mkdir -p log && touch log/mqtt.log
 
 # 从构建阶段复制编译好的二进制文件
-COPY --from=builder /app/.build/release/MQTTServerApp* /app/
+COPY --from=builder /app/.build/release/App* /app/
 
 # 复制必要的资源文件（如果有）
 # COPY --from=builder /app/Public /app/Public
@@ -75,7 +75,7 @@ USER mqtt_client
 EXPOSE 8020
 
 # 启动应用
-CMD ["./MQTTServerApp"]
+CMD ["./App"]
 
 # 使用 shell 形式以便调试
-# CMD ["/bin/bash", "-c", "ls -la /app/release/ && echo 'Looking for executable.. .' && find /app/release -type f -executable && exec /app/release/MQTTServerApp"]
+# CMD ["/bin/bash", "-c", "ls -la /app/release/ && echo 'Looking for executable.. .' && find /app/release -type f -executable && exec /app/release/App"]
