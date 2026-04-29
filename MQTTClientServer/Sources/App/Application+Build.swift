@@ -68,6 +68,7 @@ func buildApplication() async throws -> some ApplicationProtocol {
 
     StatusRoutes().addRoutes(to: router)
     EdgeDeviceRoutes(dbManager: dbManager).addRoutes(to: router)
+    EnvironmentInfoRoutes(dbManager: dbManager).addRoutes(to: router)
 
     let envForHTTP = try await HTTPSTLSConfiguration.mergedEnvironment()
     let listenPort = HTTPSTLSConfiguration.httpListenPort(env: envForHTTP)
