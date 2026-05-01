@@ -23,8 +23,8 @@ RUN swift package resolve
 # 复制源代码
 COPY . .
 
-# 构建项目（Release 模式，优化性能）
-RUN swift build -c release --static-swift-stdlib
+# 构建项目（Release 模式，优化性能）注意-Xswiftc -Osize可以移除，如果编译能够过的话
+RUN swift build -c release -Xswiftc -Osize --static-swift-stdlib
 
 # ============================================
 # 运行阶段
