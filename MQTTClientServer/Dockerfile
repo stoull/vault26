@@ -23,8 +23,12 @@ RUN swift package resolve
 # 复制源代码
 COPY . .
 
-# 构建项目（Release 模式，优化性能）注意-Xswiftc -Osize可以移除，如果编译能够过的话
-RUN swift build -c release -Xswiftc -Osize --static-swift-stdlib
+# 构建并把产物放到固定路径（含 SPM 资源包 MQTTClientServer_App.resources；COPY App* 拷不到它）
+RUN swift build -c release -Xswiftc -Osize --static-swift-stdlib \
+    && BIN="$(swift build -c release --show-bin-path)" \
+    && mkdir -p /artifacts \
+    && cp "$BIN/App" /artifacts/ \
+    && cp -r "$BIN/MQTTClientServer_App.resources" /artifacts/
 
 # ============================================
 # 运行阶段
@@ -46,7 +50,7 @@ LABEL maintainer="Hut <strongwindcarrywater@gmail.com>" \
 #     && rm -rf /var/lib/apt/lists/*
 
 # 声明卷挂载点，docker-compose 可以实际挂载这些卷
-VOLUME ["/app/log"]
+# VOLUME ["/app/log"]
 
 # 创建非 root 用户
 RUN useradd -u 1100 -m -s /bin/bash mqtt_client
@@ -56,14 +60,9 @@ WORKDIR /app
 
 # 创建必要的目录
 # 相对于WORKDIR的相对路径,即/app/shared_data
-RUN mkdir -p log && touch log/mqtt.log
+# RUN mkdir -p log && touch log/mqtt.log
 
-# 从构建阶段复制编译好的二进制文件
-COPY --from=builder /app/.build/release/App* /app/
-
-# 复制必要的资源文件（如果有）
-# COPY --from=builder /app/Public /app/Public
-# COPY --from=builder /app/Resources /app/Resources
+COPY --from=builder /artifacts/ /app/
 
 # 修改文件所有者
 RUN chown -R mqtt_client:mqtt_client /app
