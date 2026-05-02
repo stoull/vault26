@@ -41,7 +41,7 @@ struct EnvironmentInfoRoutes {
     private static let currentRecentInterval: TimeInterval = 30 * 60
 
     func addRoutes(to router: Router<some RequestContext>) {
-        router.get("home_climate/records") { request, _ -> UnifiedAPIResponse<HomeClimateRecordsPayload> in
+        router.get("smart-clock/home_climate/records") { request, _ -> UnifiedAPIResponse<HomeClimateRecordsPayload> in
             let qp = request.uri.queryParameters
 
             func stringParam(_ key: Substring) -> String? {
@@ -131,7 +131,7 @@ struct EnvironmentInfoRoutes {
             }
         }
 
-        router.get("home_climate/current") { request, _ -> UnifiedAPIResponse<HomeClimateCurrentPayload> in
+        router.get("smart-clock/home_climate/current") { request, _ -> UnifiedAPIResponse<HomeClimateCurrentPayload> in
             let qp = request.uri.queryParameters
 
             func stringParam(_ key: Substring) -> String? {
